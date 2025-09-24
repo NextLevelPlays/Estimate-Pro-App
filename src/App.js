@@ -282,9 +282,11 @@ function App() {
                     </p>
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       estimate.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      estimate.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      estimate.status === 'pending' ? 'text-white' :
                       'bg-gray-100 text-gray-800'
-                    }`}>
+                    }`}
+                    style={estimate.status === 'pending' ? { backgroundColor: companyInfo.primaryColor } : {}}
+                    >
                       {estimate.status}
                     </span>
                   </div>
@@ -308,9 +310,11 @@ function App() {
                     <p className="text-sm">{job.actualHours}/{job.estimatedHours} hrs</p>
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      job.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                      job.status === 'in-progress' ? 'text-white' :
                       'bg-gray-100 text-gray-800'
-                    }`}>
+                    }`}
+                    style={job.status === 'in-progress' ? { backgroundColor: companyInfo.secondaryColor } : {}}
+                    >
                       {job.status}
                     </span>
                   </div>
