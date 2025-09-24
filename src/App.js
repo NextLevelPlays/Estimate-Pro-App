@@ -790,17 +790,86 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-8 h-8 text-orange-600" />
+                <span className="text-xl font-bold text-gray-900">Estimate Pro</span>
+              </div>
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setCurrentPage('dashboard')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === 'dashboard'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => setCurrentPage('estimates')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === 'estimates'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Estimates
+                </button>
+                <button
+                  onClick={() => setCurrentPage('jobs')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === 'jobs'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Jobs
+                </button>
+                <button
+                  onClick={() => setCurrentPage('clients')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === 'clients'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Clients
+                </button>
+                <button
+                  onClick={() => setCurrentPage('settings')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === 'settings'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={() => setCurrentPage('guide')}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === 'guide'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Guide
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      
       <main className="max-w-7xl mx-auto px-4 py-8">
         {renderCurrentPage()}
       </main>
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b bg-gradient-to-r from-gray-50 to-orange-50">
-          <h2 className="text-lg font-semibold text-gray-900">All Estimates</h2>
-        </div>
-        <Save className="w-4 h-4" />
-        <span>Save Estimate</span>
-      </div>
+      
       {showNewEstimateForm && renderNewEstimateForm()}
       {showNewClientForm && renderNewClientForm()}
     </div>
