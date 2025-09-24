@@ -1,4 +1,4 @@
-`import React, { useState } from 'react';
+'import React, { useState } from 'react';
 import { 
   Building2, Users, FileText, Settings, BookOpen, Plus, 
   Mail, Download, Eye, DollarSign, CheckCircle, Briefcase,
@@ -657,8 +657,8 @@ Quality Work. Honest Price.`);
               >
                 <Save className=\"w-4 h-4\" />
                 <span>Save Estimate</span`
-}{
-  `content`: `              <button
+
+             <button
                 onClick={saveEstimate}
                 className=\"px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center space-x-2\"
               >
@@ -963,4 +963,5 @@ Quality Work. Honest Price.`);
 }
 
 export default App;`,
+
 
