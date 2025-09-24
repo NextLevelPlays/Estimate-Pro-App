@@ -1,5 +1,4 @@
-{
-  `content`: `import React, { useState } from 'react';
+`import React, { useState } from 'react';
 import { 
   Building2, Users, FileText, Settings, BookOpen, Plus, 
   Mail, Download, Eye, DollarSign, CheckCircle, Briefcase,
@@ -964,3 +963,4 @@ Quality Work. Honest Price.`);
 }
 
 export default App;`,
+
