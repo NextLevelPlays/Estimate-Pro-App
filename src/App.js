@@ -830,70 +830,72 @@ export default App;space-y-2">
     </div>
   );
 
-  const renderEstimateSection = (title, items, section, isLabor = false) => (
-    <div className="mt-6">
-      <div className="flex justify-between items-center mb-2">
-        <label className="block text-sm font-medium text-gray-700">{title}</label>
-        <button
-          onClick={() => addEstimateItem(section)}
-          className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90"
-          style={{ backgroundColor: companyInfo.primaryColor }}
-        >
-          Add {title.slice(0, -1)}
-        </button>
+  const renderEstimateSection = (title, items, section, isLabor = false) => {
+    return (
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-2">
+          <label className="block text-sm font-medium text-gray-700">{title}</label>
+          <button
+            onClick={() => addEstimateItem(section)}
+            className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90"
+            style={{ backgroundColor: companyInfo.primaryColor }}
+          >
+            Add {title.slice(0, -1)}
+          </button>
+        </div>
+        
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={index} className="grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-5">
+                <input
+                  type="text"
+                  placeholder="Description"
+                  value={item.description}
+                  onChange={(e) => updateEstimateItem(section, index, 'description', e.target.value)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div className="col-span-2">
+                <input
+                  type="number"
+                  placeholder={isLabor ? "Hours" : "Qty"}
+                  value={isLabor ? item.hours : item.quantity}
+                  onChange={(e) => updateEstimateItem(section, index, isLabor ? 'hours' : 'quantity', parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div className="col-span-2">
+                <input
+                  type="number"
+                  placeholder="Rate"
+                  value={item.rate}
+                  onChange={(e) => updateEstimateItem(section, index, 'rate', parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div className="col-span-2">
+                <input
+                  type="text"
+                  value={`${(item.amount || 0).toFixed(2)}`}
+                  readOnly
+                  className="w-full rounded-md border-gray-300 bg-gray-50 text-sm"
+                />
+              </div>
+              <div className="col-span-1">
+                <button
+                  onClick={() => removeEstimateItem(section, index)}
+                  className="text-red-600 hover:text-red-800 text-sm"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      
-      <div className="space-y-2">
-        {items.map((item, index) => (
-          <div key={index} className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-5">
-              <input
-                type="text"
-                placeholder="Description"
-                value={item.description}
-                onChange={(e) => updateEstimateItem(section, index, 'description', e.target.value)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-              />
-            </div>
-            <div className="col-span-2">
-              <input
-                type="number"
-                placeholder={isLabor ? "Hours" : "Qty"}
-                value={isLabor ? item.hours : item.quantity}
-                onChange={(e) => updateEstimateItem(section, index, isLabor ? 'hours' : 'quantity', parseFloat(e.target.value) || 0)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-              />
-            </div>
-            <div className="col-span-2">
-              <input
-                type="number"
-                placeholder="Rate"
-                value={item.rate}
-                onChange={(e) => updateEstimateItem(section, index, 'rate', parseFloat(e.target.value) || 0)}
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-              />
-            </div>
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={`$${(item.amount || 0).toFixed(2)}`}
-                readOnly
-                className="w-full rounded-md border-gray-300 bg-gray-50 text-sm"
-              />
-            </div>
-            <div className="col-span-1">
-              <button
-                onClick={() => removeEstimateItem(section, index)}
-                className="text-red-600 hover:text-red-800 text-sm"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderNewEstimateForm = () => {
     const totals = calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices);
