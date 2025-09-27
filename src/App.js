@@ -18,7 +18,7 @@ function App() {
     secondaryColor: '#2D3748',
   };
 
-  const BLACKSTON_LOGO = "./Blackston-logo.png";
+  const BLACKSTON_LOGO = "/Blackston-logo.png";
   
   const [clients, setClients] = useState([
     {
@@ -968,4 +968,5 @@ function App() {
 }
 
 export default App;
+
 
