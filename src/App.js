@@ -8,16 +8,17 @@ import {
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   
-  // Company branding info
   const companyInfo = {
     name: 'Blackston Handyman Services',
     tagline: 'Quality Work. Honest Price.',
     owner: 'Brandon Blackston',
     phone: '(303) 880-4557',
     email: 'brandon@blackstonhandyman.com',
-    primaryColor: '#B85450', // Rust/burnt orange
-    secondaryColor: '#2D3748', // Dark slate
+    primaryColor: '#B85450',
+    secondaryColor: '#2D3748',
   };
+
+  const BLACKSTON_LOGO = "./blackston-logo.png";
   
   const [clients, setClients] = useState([
     {
@@ -550,13 +551,11 @@ function App() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-3">
-                {/* Logo placeholder - replace this div with your actual logo image */}
-                <div 
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: companyInfo.primaryColor }}
-                >
-                  BHS
-                </div>
+                <img 
+                  src={BLACKSTON_LOGO} 
+                  alt="Blackston Handyman Services Logo" 
+                  className="w-12 h-12 rounded-lg object-contain bg-white p-1"
+                />
                 <div>
                   <span className="text-xl font-bold text-white">{companyInfo.name}</span>
                   <p className="text-xs text-gray-300">{companyInfo.tagline}</p>
@@ -600,7 +599,6 @@ function App() {
         {renderCurrentPage()}
       </main>
       
-      {/* New Estimate Form */}
       {showNewEstimateForm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-5xl shadow-lg rounded-md bg-white">
@@ -655,7 +653,6 @@ function App() {
                   />
                 </div>
 
-                {/* Materials Section */}
                 <div className="mt-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-gray-700">Materials</label>
@@ -718,7 +715,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Labor Section */}
                 <div className="mt-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-gray-700">Labor</label>
@@ -781,7 +777,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Additional Services Section */}
                 <div className="mt-6">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-gray-700">Additional Services</label>
@@ -799,7 +794,7 @@ function App() {
                         <div className="col-span-5">
                           <input
                             type="text"
-                            placeholder="Description (e.g., Debris Removal, Power Washing)"
+                            placeholder="Description"
                             value={item.description}
                             onChange={(e) => updateEstimateItem('additionalServices', index, 'description', e.target.value)}
                             className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
@@ -844,7 +839,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Totals */}
                 <div className="mt-4 p-4 rounded" style={{ backgroundColor: `${companyInfo.secondaryColor}10` }}>
                   <div className="text-right space-y-2">
                     <div className="flex justify-between">
@@ -896,7 +890,6 @@ function App() {
         </div>
       )}
 
-      {/* New Client Form */}
       {showNewClientForm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
