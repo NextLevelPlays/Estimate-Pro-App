@@ -199,7 +199,7 @@ function App() {
   };
 
   const bulkDelete = () => {
-    if (confirm(`Are you sure you want to delete ${selectedEstimates.length} estimates?`)) {
+    if (window.confirm(`Are you sure you want to delete ${selectedEstimates.length} estimates?`)) {
       setEstimates(prev => prev.filter(estimate => !selectedEstimates.includes(estimate.id)));
       setSelectedEstimates([]);
       setShowBulkActions(false);
