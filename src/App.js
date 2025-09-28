@@ -75,6 +75,13 @@ function App() {
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [isGeneratingScope, setIsGeneratingScope] = useState(false);
   const [rawScopeInput, setRawScopeInput] = useState('');
+  
+  // Search and filter states
+  const [estimateSearchTerm, setEstimateSearchTerm] = useState('');
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [estimateStatusFilter, setEstimateStatusFilter] = useState('all');
+  const [selectedEstimates, setSelectedEstimates] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const [newEstimate, setNewEstimate] = useState({
     clientId: '',
@@ -143,6 +150,71 @@ function App() {
       ...prev,
       [section]: prev[section].filter((_, i) => i !== index)
     }));
+  };
+
+  const getClientName = (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.name : 'Unknown Client';
+  };
+
+  // Search and filter functions
+  const filteredEstimates = estimates.filter(estimate => {
+    const matchesSearch = estimate.title.toLowerCase().includes(estimateSearchTerm.toLowerCase()) ||
+                         getClientName(estimate.clientId).toLowerCase().includes(estimateSearchTerm.toLowerCase());
+    const matchesStatus = estimateStatusFilter === 'all' || estimate.status === estimateStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.email.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.company.toLowerCase().includes(clientSearchTerm.toLowerCase())
+  );
+
+  // Bulk actions functions
+  const toggleEstimateSelection = (estimateId) => {
+    setSelectedEstimates(prev => 
+      prev.includes(estimateId) 
+        ? prev.filter(id => id !== estimateId)
+        : [...prev, estimateId]
+    );
+  };
+
+  const selectAllEstimates = () => {
+    setSelectedEstimates(filteredEstimates.map(e => e.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedEstimates([]);
+  };
+
+  const bulkUpdateStatus = (newStatus) => {
+    setEstimates(prev => prev.map(estimate => 
+      selectedEstimates.includes(estimate.id) 
+        ? { ...estimate, status: newStatus }
+        : estimate
+    ));
+    setSelectedEstimates([]);
+    setShowBulkActions(false);
+  };
+
+  const bulkDelete = () => {
+    if (confirm(`Are you sure you want to delete ${selectedEstimates.length} estimates?`)) {
+      setEstimates(prev => prev.filter(estimate => !selectedEstimates.includes(estimate.id)));
+      setSelectedEstimates([]);
+      setShowBulkActions(false);
+    }
+  };
+
+  const bulkGeneratePDFs = () => {
+    selectedEstimates.forEach(estimateId => {
+      const estimate = estimates.find(e => e.id === estimateId);
+      if (estimate) {
+        setTimeout(() => generatePDF(estimate), 500);
+      }
+    });
+    setSelectedEstimates([]);
+    setShowBulkActions(false);
   };
 
   const generateLineItemsFromScope = () => {
@@ -285,11 +357,6 @@ function App() {
     setClients(prev => [...prev, client]);
     setNewClient({ name: '', email: '', phone: '', address: '', company: '' });
     setShowNewClientForm(false);
-  };
-
-  const getClientName = (clientId) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? client.name : 'Unknown Client';
   };
 
   const generateProfessionalScope = async () => {
@@ -695,9 +762,9 @@ function App() {
             <tr><th>Line Item Description</th><th>PRICE</th><th>SUBTOTAL</th></tr>
           </thead>
           <tbody>
-            ${estimate.materials.map(item => `<tr><td>${item.description} (Materials)</td><td>${item.rate.toFixed(2)}</td><td>${item.amount.toFixed(2)}</td></tr>`).join('')}
-            ${estimate.labor.map(item => `<tr><td>${item.description} (${item.hours} hours @ ${item.rate.toFixed(2)}/hr)</td><td>${item.rate.toFixed(2)}</td><td>${item.amount.toFixed(2)}</td></tr>`).join('')}
-            ${estimate.additionalServices.map(item => `<tr><td>${item.description}</td><td>${item.rate.toFixed(2)}</td><td>${item.amount.toFixed(2)}</td></tr>`).join('')}
+            ${estimate.materials.map(item => `<tr><td>${item.description} (Materials)</td><td>$${item.rate.toFixed(2)}</td><td>$${item.amount.toFixed(2)}</td></tr>`).join('')}
+            ${estimate.labor.map(item => `<tr><td>${item.description} (${item.hours} hours @ $${item.rate.toFixed(2)}/hr)</td><td>$${item.rate.toFixed(2)}</td><td>$${item.amount.toFixed(2)}</td></tr>`).join('')}
+            ${estimate.additionalServices.map(item => `<tr><td>${item.description}</td><td>$${item.rate.toFixed(2)}</td><td>$${item.amount.toFixed(2)}</td></tr>`).join('')}
           </tbody>
         </table>
         
@@ -707,10 +774,10 @@ function App() {
             <p>Terms: Payment is due at time of service unless otherwise specified. Net-30 terms available by prior arrangement. All work is guaranteed for 90 days from completion. Late payments subject to 1.5% monthly service charge. Disputes must be submitted within 10 days of invoice date.</p>
           </div>
           <div class="totals">
-            <div class="total-line"><span>Sub-total:</span><span>${estimate.subtotal.toFixed(2)}</span></div>
+            <div class="total-line"><span>Sub-total:</span><span>$${estimate.subtotal.toFixed(2)}</span></div>
             <div class="total-line"><span>Discount:</span><span>$0.00</span></div>
-            <div class="total-line"><span>tax (8%):</span><span>${estimate.tax.toFixed(2)}</span></div>
-            <div class="total-line final"><span>TOTAL:</span><span>${estimate.total.toFixed(2)}</span></div>
+            <div class="total-line"><span>tax (8%):</span><span>$${estimate.tax.toFixed(2)}</span></div>
+            <div class="total-line final"><span>TOTAL:</span><span>$${estimate.total.toFixed(2)}</span></div>
           </div>
         </div>
         
@@ -761,15 +828,15 @@ function App() {
       <nav className="shadow-sm border-b" style={{ backgroundColor: companyInfo.secondaryColor }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4 lg:space-x-8">
               <div className="flex items-center space-x-3">
-                <img src={BLACKSTON_LOGO} alt="Blackston Handyman Services Logo" className="w-12 h-12 rounded-lg object-contain bg-white p-1" />
-                <div>
-                  <span className="text-xl font-bold text-white">{companyInfo.name}</span>
+                <img src={BLACKSTON_LOGO} alt="Blackston Handyman Services Logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1" />
+                <div className="hidden sm:block">
+                  <span className="text-lg sm:text-xl font-bold text-white">{companyInfo.name}</span>
                   <p className="text-xs text-gray-300">{companyInfo.tagline}</p>
                 </div>
               </div>
-              <div className="flex space-x-4">
+              <div className="hidden md:flex space-x-2 lg:space-x-4">
                 {[
                   { key: 'dashboard', label: 'Dashboard' },
                   { key: 'estimates', label: 'Estimates' },
@@ -778,13 +845,29 @@ function App() {
                   { key: 'settings', label: 'Settings' },
                   { key: 'guide', label: 'Guide' }
                 ].map(({ key, label }) => (
-                  <button key={key} onClick={() => setCurrentPage(key)} className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${currentPage === key ? 'text-white' : 'text-gray-300 hover:text-white'}`} style={currentPage === key ? { backgroundColor: companyInfo.primaryColor } : {}}>{label}</button>
+                  <button key={key} onClick={() => setCurrentPage(key)} className={`px-2 lg:px-3 py-2 text-sm font-medium rounded-md transition-colors ${currentPage === key ? 'text-white' : 'text-gray-300 hover:text-white'}`} style={currentPage === key ? { backgroundColor: companyInfo.primaryColor } : {}}>{label}</button>
                 ))}
+              </div>
+              
+              {/* Mobile Menu */}
+              <div className="md:hidden">
+                <select 
+                  value={currentPage} 
+                  onChange={(e) => setCurrentPage(e.target.value)}
+                  className="bg-gray-700 text-white border-gray-600 rounded px-2 py-1 text-sm"
+                >
+                  <option value="dashboard">Dashboard</option>
+                  <option value="estimates">Estimates</option>
+                  <option value="jobs">Jobs</option>
+                  <option value="clients">Clients</option>
+                  <option value="settings">Settings</option>
+                  <option value="guide">Guide</option>
+                </select>
               </div>
             </div>
             <div className="text-right">
               <p className="text-white text-sm font-medium">{companyInfo.owner}</p>
-              <p className="text-gray-300 text-xs">{companyInfo.phone}</p>
+              <p className="text-gray-300 text-xs hidden sm:block">{companyInfo.phone}</p>
             </div>
           </div>
         </div>
@@ -793,17 +876,17 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {currentPage === 'dashboard' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
                 <p className="text-gray-600 mt-1">{companyInfo.tagline}</p>
               </div>
-              <div className="flex space-x-4">
-                <button onClick={() => setShowNewEstimateForm(true)} className="hover:bg-opacity-90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors" style={{ backgroundColor: companyInfo.primaryColor }}>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                <button onClick={() => setShowNewEstimateForm(true)} className="hover:bg-opacity-90 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors" style={{ backgroundColor: companyInfo.primaryColor }}>
                   <Plus className="w-4 h-4" />
                   <span>New Estimate</span>
                 </button>
-                <button onClick={() => setShowNewClientForm(true)} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                <button onClick={() => setShowNewClientForm(true)} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2">
                   <Plus className="w-4 h-4" />
                   <span>New Client</span>
                 </button>
@@ -912,37 +995,147 @@ function App() {
 
         {currentPage === 'estimates' && (
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Estimates</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Estimates</h1>
+              
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <div className="flex-1 sm:w-64">
+                  <input
+                    type="text"
+                    placeholder="Search estimates or clients..."
+                    value={estimateSearchTerm}
+                    onChange={(e) => setEstimateSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <select
+                  value={estimateStatusFilter}
+                  onChange={(e) => setEstimateStatusFilter(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bulk Actions Bar */}
+            {selectedEstimates.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <span className="text-sm text-blue-700">
+                    {selectedEstimates.length} estimate{selectedEstimates.length !== 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => bulkUpdateStatus('approved')}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                    >
+                      Mark Approved
+                    </button>
+                    <button
+                      onClick={() => bulkUpdateStatus('pending')}
+                      className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
+                    >
+                      Mark Pending
+                    </button>
+                    <button
+                      onClick={bulkGeneratePDFs}
+                      className="px-3 py-1 text-white rounded text-sm hover:bg-opacity-90"
+                      style={{ backgroundColor: companyInfo.primaryColor }}
+                    >
+                      Generate PDFs
+                    </button>
+                    <button
+                      onClick={bulkDelete}
+                      className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={clearSelection}
+                      className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Select All/None */}
+            {filteredEstimates.length > 0 && (
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={selectedEstimates.length === filteredEstimates.length ? clearSelection : selectAllEstimates}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {selectedEstimates.length === filteredEstimates.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span className="text-sm text-gray-500">
+                  Showing {filteredEstimates.length} of {estimates.length} estimates
+                </span>
+              </div>
+            )}
+
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <ul className="divide-y divide-gray-200">
-                {estimates.map(estimate => (
-                  <li key={estimate.id}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-lg font-medium" style={{ color: companyInfo.secondaryColor }}>{estimate.title}</p>
-                          <p className="text-sm text-gray-600">{getClientName(estimate.clientId)}</p>
-                          <p className="text-sm text-gray-500 mt-1">{estimate.description}</p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <p className="text-lg font-semibold" style={{ color: companyInfo.primaryColor }}>${estimate.total.toFixed(2)}</p>
-                            <p className="text-sm text-gray-500">Created: {estimate.createdAt}</p>
-                            <p className="text-sm text-gray-500">Valid until: {estimate.validUntil}</p>
+              {filteredEstimates.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No estimates found matching your criteria.</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-200">
+                  {filteredEstimates.map(estimate => (
+                    <li key={estimate.id}>
+                      <div className="px-4 py-4 sm:px-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 flex-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedEstimates.includes(estimate.id)}
+                              onChange={() => toggleEstimateSelection(estimate.id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-lg font-medium truncate" style={{ color: companyInfo.secondaryColor }}>
+                                {estimate.title}
+                              </p>
+                              <p className="text-sm text-gray-600 truncate">{getClientName(estimate.clientId)}</p>
+                              <p className="text-sm text-gray-500 mt-1 hidden sm:block">{estimate.description}</p>
+                            </div>
                           </div>
-                          <div className="flex flex-col space-y-2">
-                            <button onClick={() => generatePDF(estimate)} className="px-4 py-2 text-white rounded-lg flex items-center space-x-2 hover:bg-opacity-90 text-sm" style={{ backgroundColor: companyInfo.primaryColor }}>
-                              <Download className="w-4 h-4" />
-                              <span>Generate PDF</span>
-                            </button>
-                            <span className={`px-2 py-1 text-xs rounded-full ${estimate.status === 'approved' ? 'bg-green-100 text-green-800' : estimate.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>{estimate.status}</span>
+                          <div className="flex items-center space-x-4">
+                            <div className="text-right">
+                              <p className="text-lg font-semibold" style={{ color: companyInfo.primaryColor }}>
+                                ${estimate.total.toFixed(2)}
+                              </p>
+                              <p className="text-sm text-gray-500 hidden sm:block">Created: {estimate.createdAt}</p>
+                              <p className="text-sm text-gray-500 hidden sm:block">Valid until: {estimate.validUntil}</p>
+                            </div>
+                            <div className="flex flex-col space-y-2">
+                              <button 
+                                onClick={() => generatePDF(estimate)} 
+                                className="px-3 py-1 sm:px-4 sm:py-2 text-white rounded-lg flex items-center space-x-1 sm:space-x-2 hover:bg-opacity-90 text-xs sm:text-sm" 
+                                style={{ backgroundColor: companyInfo.primaryColor }}
+                              >
+                                <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="hidden sm:inline">Generate PDF</span>
+                                <span className="sm:hidden">PDF</span>
+                              </button>
+                              <span className={`px-2 py-1 text-xs rounded-full text-center ${estimate.status === 'approved' ? 'bg-green-100 text-green-800' : estimate.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                                {estimate.status}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         )}
@@ -982,33 +1175,60 @@ function App() {
 
         {currentPage === 'clients' && (
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Clients</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {clients.map(client => (
-                <div key={client.id} className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold" style={{ color: companyInfo.secondaryColor }}>{client.name}</h3>
-                      <p className="text-sm text-gray-600">{client.company}</p>
-                      <div className="mt-4 space-y-2">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Mail className="w-4 h-4 mr-2" />
-                          {client.email}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <span className="w-4 h-4 mr-2">📞</span>
-                          {client.phone}
-                        </div>
-                        <div className="flex items-start text-sm text-gray-600">
-                          <MapPin className="w-4 h-4 mr-2 mt-0.5" />
-                          <span>{client.address}</span>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Clients</h1>
+              
+              {/* Search Control */}
+              <div className="w-full sm:w-64">
+                <input
+                  type="text"
+                  placeholder="Search clients..."
+                  value={clientSearchTerm}
+                  onChange={(e) => setClientSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {filteredClients.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No clients found matching your search.</p>
+              </div>
+            ) : (
+              <>
+                <div className="text-right text-sm text-gray-500 mb-4">
+                  Showing {filteredClients.length} of {clients.length} clients
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {filteredClients.map(client => (
+                    <div key={client.id} className="bg-white p-4 sm:p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold truncate" style={{ color: companyInfo.secondaryColor }}>
+                            {client.name}
+                          </h3>
+                          <p className="text-sm text-gray-600 truncate">{client.company}</p>
+                          <div className="mt-3 sm:mt-4 space-y-2">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+                              <span className="truncate">{client.email}</span>
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <span className="w-4 h-4 mr-2 flex-shrink-0">📞</span>
+                              <span className="truncate">{client.phone}</span>
+                            </div>
+                            <div className="flex items-start text-sm text-gray-600">
+                              <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                              <span className="line-clamp-2">{client.address}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1065,6 +1285,14 @@ function App() {
                   <li>Click "Generate Professional Scope with AI"</li>
                   <li>Review and edit the generated scope as needed</li>
                 </ol>
+                <h3 style={{ color: companyInfo.primaryColor }}>Search and Bulk Actions</h3>
+                <p>New features to speed up your workflow:</p>
+                <ol>
+                  <li>Use the search bars to quickly find estimates or clients</li>
+                  <li>Filter estimates by status to focus on pending or approved items</li>
+                  <li>Select multiple estimates to perform bulk actions like status updates or PDF generation</li>
+                  <li>The app works great on mobile devices with touch-friendly interfaces</li>
+                </ol>
               </div>
             </div>
           </div>
@@ -1072,9 +1300,9 @@ function App() {
       </main>
       
       {showNewEstimateForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-5xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
+          <div className="relative top-4 sm:top-20 mx-auto border w-full max-w-5xl shadow-lg rounded-md bg-white">
+            <div className="p-3 sm:p-5">
               <h3 className="text-lg font-medium mb-4" style={{ color: companyInfo.secondaryColor }}>New Estimate</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1124,7 +1352,7 @@ function App() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Professional Scope of Work (Optional - will appear on separate letterhead page)</label>
-                  <textarea value={newEstimate.scope} onChange={(e) => setNewEstimate(prev => ({ ...prev, scope: e.target.value }))} rows={8} placeholder="Professional scope of work will appear here, or you can type manually..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                  <textarea value={newEstimate.scope} onChange={(e) => setNewEstimate(prev => ({ ...prev, scope: e.target.value }))} rows={6} placeholder="Professional scope of work will appear here, or you can type manually..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                   
                   {newEstimate.scope && (
                     <button 
@@ -1137,84 +1365,99 @@ function App() {
                   )}
                 </div>
 
+                {/* Materials Section - Mobile Optimized */}
                 <div className="mt-6">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
                     <label className="block text-sm font-medium text-gray-700">Materials</label>
-                    <button type="button" onClick={() => addEstimateItem('materials')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90" style={{ backgroundColor: companyInfo.primaryColor }}>Add Material</button>
+                    <button type="button" onClick={() => addEstimateItem('materials')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 w-full sm:w-auto" style={{ backgroundColor: companyInfo.primaryColor }}>Add Material</button>
                   </div>
                   <div className="space-y-2">
                     {newEstimate.materials.map((item, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-5">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 border rounded-lg sm:p-0 sm:border-0 sm:rounded-none">
+                        <div className="sm:col-span-5">
+                          <label className="block text-xs text-gray-500 sm:hidden">Description</label>
                           <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('materials', index, 'description', e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Quantity</label>
                           <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateEstimateItem('materials', index, 'quantity', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Price</label>
                           <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('materials', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Total</label>
                           <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="w-full rounded-md border-gray-300 bg-gray-50 text-sm" />
                         </div>
-                        <div className="col-span-1">
-                          <button type="button" onClick={() => removeEstimateItem('materials', index)} className="text-red-600 hover:text-red-800 text-sm">×</button>
+                        <div className="sm:col-span-1 flex justify-center">
+                          <button type="button" onClick={() => removeEstimateItem('materials', index)} className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded">Remove</button>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Labor Section - Mobile Optimized */}
                 <div className="mt-6">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
                     <label className="block text-sm font-medium text-gray-700">Labor</label>
-                    <button type="button" onClick={() => addEstimateItem('labor')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90" style={{ backgroundColor: companyInfo.primaryColor }}>Add Labor</button>
+                    <button type="button" onClick={() => addEstimateItem('labor')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 w-full sm:w-auto" style={{ backgroundColor: companyInfo.primaryColor }}>Add Labor</button>
                   </div>
                   <div className="space-y-2">
                     {newEstimate.labor.map((item, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-5">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 border rounded-lg sm:p-0 sm:border-0 sm:rounded-none">
+                        <div className="sm:col-span-5">
+                          <label className="block text-xs text-gray-500 sm:hidden">Description</label>
                           <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('labor', index, 'description', e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Hours</label>
                           <input type="number" placeholder="Hours" value={item.hours} onChange={(e) => updateEstimateItem('labor', index, 'hours', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
-                          <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('labor', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Rate</label>
+                          <input type="number" placeholder="Rate" value={item.rate} onChange={(e) => updateEstimateItem('labor', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Total</label>
                           <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="w-full rounded-md border-gray-300 bg-gray-50 text-sm" />
                         </div>
-                        <div className="col-span-1">
-                          <button type="button" onClick={() => removeEstimateItem('labor', index)} className="text-red-600 hover:text-red-800 text-sm">×</button>
+                        <div className="sm:col-span-1 flex justify-center">
+                          <button type="button" onClick={() => removeEstimateItem('labor', index)} className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded">Remove</button>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Additional Services Section - Mobile Optimized */}
                 <div className="mt-6">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
                     <label className="block text-sm font-medium text-gray-700">Additional Services</label>
-                    <button type="button" onClick={() => addEstimateItem('additionalServices')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90" style={{ backgroundColor: companyInfo.primaryColor }}>Add Service</button>
+                    <button type="button" onClick={() => addEstimateItem('additionalServices')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 w-full sm:w-auto" style={{ backgroundColor: companyInfo.primaryColor }}>Add Service</button>
                   </div>
                   <div className="space-y-2">
                     {newEstimate.additionalServices.map((item, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-5">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 border rounded-lg sm:p-0 sm:border-0 sm:rounded-none">
+                        <div className="sm:col-span-5">
+                          <label className="block text-xs text-gray-500 sm:hidden">Description</label>
                           <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('additionalServices', index, 'description', e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Quantity</label>
                           <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateEstimateItem('additionalServices', index, 'quantity', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Price</label>
                           <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('additionalServices', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs text-gray-500 sm:hidden">Total</label>
                           <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="w-full rounded-md border-gray-300 bg-gray-50 text-sm" />
                         </div>
-                        <div className="col-span-1">
-                          <button type="button" onClick={() => removeEstimateItem('additionalServices', index)} className="text-red-600 hover:text-red-800 text-sm">×</button>
+                        <div className="sm:col-span-1 flex justify-center">
+                          <button type="button" onClick={() => removeEstimateItem('additionalServices', index)} className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded">Remove</button>
                         </div>
                       </div>
                     ))}
@@ -1233,9 +1476,9 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-4 mt-6">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 mt-6">
                 <button type="button" onClick={() => setShowNewEstimateForm(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="button" onClick={saveEstimate} className="px-6 py-2 text-white rounded-lg flex items-center space-x-2 hover:bg-opacity-90" style={{ backgroundColor: companyInfo.primaryColor }}>
+                <button type="button" onClick={saveEstimate} className="px-6 py-2 text-white rounded-lg flex items-center justify-center space-x-2 hover:bg-opacity-90" style={{ backgroundColor: companyInfo.primaryColor }}>
                   <Save className="w-4 h-4" />
                   <span>Save Estimate</span>
                 </button>
@@ -1246,9 +1489,9 @@ function App() {
       )}
 
       {showNewClientForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
+          <div className="relative top-4 sm:top-20 mx-auto border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="p-3 sm:p-5">
               <h3 className="text-lg font-medium mb-4" style={{ color: companyInfo.secondaryColor }}>New Client</h3>
               <div className="space-y-4">
                 <div>
@@ -1272,9 +1515,9 @@ function App() {
                   <textarea value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))} rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
                 </div>
               </div>
-              <div className="flex justify-end space-x-4 mt-6">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 mt-6">
                 <button type="button" onClick={() => setShowNewClientForm(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="button" onClick={saveClient} className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
+                <button type="button" onClick={saveClient} className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center space-x-2">
                   <Save className="w-4 h-4" />
                   <span>Save Client</span>
                 </button>
