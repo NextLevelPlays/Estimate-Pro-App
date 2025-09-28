@@ -79,7 +79,6 @@ function App() {
   const [newEstimate, setNewEstimate] = useState({
     clientId: '',
     title: '',
-    description: '',
     scope: '',
     materials: [{ description: '', quantity: 1, rate: 0, amount: 0 }],
     labor: [{ description: '', hours: 1, rate: 75.00, amount: 75.00 }],
@@ -146,6 +145,115 @@ function App() {
     }));
   };
 
+  const generateLineItemsFromScope = () => {
+    if (!newEstimate.scope.trim()) {
+      alert('Please generate or enter a professional scope first');
+      return;
+    }
+
+    const scope = newEstimate.scope.toLowerCase();
+    let materials = [];
+    let labor = [];
+    let additionalServices = [];
+
+    // Analyze scope and generate appropriate line items
+    if (scope.includes('fence') || scope.includes('fencing')) {
+      materials = [
+        { description: 'Fence Posts (4x4 Pressure Treated)', quantity: 8, rate: 15.00, amount: 120.00 },
+        { description: 'Fence Boards (6ft Privacy)', quantity: 50, rate: 8.50, amount: 425.00 },
+        { description: 'Gate Hardware Kit', quantity: 1, rate: 45.00, amount: 45.00 },
+        { description: 'Concrete Mix (80lb bags)', quantity: 12, rate: 4.50, amount: 54.00 },
+        { description: 'Galvanized Screws/Nails', quantity: 1, rate: 25.00, amount: 25.00 }
+      ];
+      labor = [
+        { description: 'Fence Installation Labor', hours: 16, rate: 75.00, amount: 1200.00 }
+      ];
+      if (scope.includes('demo') || scope.includes('remove')) {
+        additionalServices = [
+          { description: 'Old Fence Removal & Disposal', quantity: 1, rate: 350.00, amount: 350.00 }
+        ];
+      }
+    } else if (scope.includes('paint') && scope.includes('exterior')) {
+      materials = [
+        { description: 'Exterior Paint (Gallon)', quantity: 3, rate: 55.00, amount: 165.00 },
+        { description: 'Primer (Gallon)', quantity: 2, rate: 45.00, amount: 90.00 },
+        { description: 'Brushes & Rollers', quantity: 1, rate: 75.00, amount: 75.00 },
+        { description: 'Drop Cloths & Masking', quantity: 1, rate: 40.00, amount: 40.00 }
+      ];
+      labor = [
+        { description: 'Surface Preparation', hours: 8, rate: 75.00, amount: 600.00 },
+        { description: 'Painting Application', hours: 12, rate: 75.00, amount: 900.00 }
+      ];
+      additionalServices = [
+        { description: 'Power Washing', quantity: 1, rate: 200.00, amount: 200.00 }
+      ];
+    } else if (scope.includes('kitchen') || scope.includes('cabinet')) {
+      materials = [
+        { description: 'Kitchen Cabinets (Linear Foot)', quantity: 15, rate: 180.00, amount: 2700.00 },
+        { description: 'Cabinet Hardware', quantity: 1, rate: 150.00, amount: 150.00 },
+        { description: 'Wood Screws & Fasteners', quantity: 1, rate: 45.00, amount: 45.00 }
+      ];
+      labor = [
+        { description: 'Cabinet Installation', hours: 20, rate: 85.00, amount: 1700.00 },
+        { description: 'Hardware Installation', hours: 4, rate: 75.00, amount: 300.00 }
+      ];
+      if (scope.includes('counter')) {
+        materials.push({ description: 'Countertop (Square Foot)', quantity: 25, rate: 45.00, amount: 1125.00 });
+        labor.push({ description: 'Countertop Installation', hours: 8, rate: 85.00, amount: 680.00 });
+      }
+      if (scope.includes('backsplash') || scope.includes('tile')) {
+        materials.push({ description: 'Tile & Grout', quantity: 1, rate: 275.00, amount: 275.00 });
+        labor.push({ description: 'Tile Installation', hours: 12, rate: 75.00, amount: 900.00 });
+      }
+    } else if (scope.includes('bathroom')) {
+      materials = [
+        { description: 'Bathroom Vanity', quantity: 1, rate: 450.00, amount: 450.00 },
+        { description: 'Faucet & Hardware', quantity: 1, rate: 125.00, amount: 125.00 },
+        { description: 'Plumbing Fittings', quantity: 1, rate: 85.00, amount: 85.00 }
+      ];
+      labor = [
+        { description: 'Vanity Installation', hours: 6, rate: 85.00, amount: 510.00 },
+        { description: 'Plumbing Connections', hours: 4, rate: 95.00, amount: 380.00 }
+      ];
+      if (scope.includes('tile')) {
+        materials.push({ description: 'Bathroom Tile (Square Foot)', quantity: 35, rate: 8.50, amount: 297.50 });
+        labor.push({ description: 'Tile Installation', hours: 10, rate: 75.00, amount: 750.00 });
+      }
+    } else if (scope.includes('deck')) {
+      materials = [
+        { description: 'Deck Boards (Pressure Treated)', quantity: 25, rate: 12.00, amount: 300.00 },
+        { description: 'Deck Joists (2x8)', quantity: 12, rate: 15.00, amount: 180.00 },
+        { description: 'Concrete for Footings', quantity: 8, rate: 6.50, amount: 52.00 },
+        { description: 'Galvanized Deck Screws', quantity: 1, rate: 35.00, amount: 35.00 }
+      ];
+      labor = [
+        { description: 'Deck Framing', hours: 12, rate: 85.00, amount: 1020.00 },
+        { description: 'Decking Installation', hours: 8, rate: 75.00, amount: 600.00 }
+      ];
+      if (scope.includes('rail')) {
+        materials.push({ description: 'Railing Kit', quantity: 1, rate: 225.00, amount: 225.00 });
+        labor.push({ description: 'Railing Installation', hours: 6, rate: 75.00, amount: 450.00 });
+      }
+    } else {
+      // Generic handyman work
+      materials = [
+        { description: 'General Materials', quantity: 1, rate: 150.00, amount: 150.00 },
+        { description: 'Hardware & Fasteners', quantity: 1, rate: 45.00, amount: 45.00 }
+      ];
+      labor = [
+        { description: 'General Labor', hours: 8, rate: 75.00, amount: 600.00 }
+      ];
+    }
+
+    // Update the estimate with generated line items
+    setNewEstimate(prev => ({
+      ...prev,
+      materials: materials,
+      labor: labor,
+      additionalServices: additionalServices
+    }));
+  };
+
   const saveEstimate = () => {
     const totals = calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices);
     const estimate = {
@@ -160,7 +268,6 @@ function App() {
     setNewEstimate({
       clientId: '',
       title: '',
-      description: '',
       scope: '',
       materials: [{ description: '', quantity: 1, rate: 0, amount: 0 }],
       labor: [{ description: '', hours: 1, rate: 75.00, amount: 75.00 }],
@@ -210,56 +317,280 @@ function App() {
     const input = rawInput.toLowerCase();
     let professional = "";
     
-    if (input.includes('kitchen') || input.includes('cabinet')) {
-      professional += "KITCHEN RENOVATION SCOPE:\n\n";
-      professional += "Project Overview:\n";
-      professional += "Complete kitchen renovation including cabinet installation, countertop replacement, and finishing work.\n\n";
-      professional += "Detailed Work Description:\n";
-      if (input.includes('cabinet')) professional += "• Professional cabinet installation with proper mounting and alignment\n";
-      if (input.includes('counter')) professional += "• Countertop measurement, template creation, and installation\n";
-      if (input.includes('tile') || input.includes('backsplash')) professional += "• Tile backsplash installation with professional grouting and sealing\n";
-      if (input.includes('paint')) professional += "• Surface preparation and professional painting with premium materials\n";
-      professional += "• Hardware installation and final adjustments\n";
-      professional += "• Cleanup and debris removal\n\n";
-      professional += "Quality Standards:\n";
-      professional += "All work performed to industry standards with attention to detail and craftsmanship. Materials and installation backed by warranty.";
+    if (input.includes('fence') || input.includes('fencing')) {
+      professional += "1. Project Overview\n\n";
+      professional += "This document outlines the scope of work for professional fence installation/replacement services. The project includes demolition of existing fencing (if applicable), site preparation, installation of new fencing materials, and all finishing work necessary to provide a secure, attractive, and durable fencing solution.\n\n";
+      
+      professional += "2. Detailed Scope of Work\n\n";
+      professional += "2.1. Demolition and Site Preparation\n";
+      if (input.includes('demo') || input.includes('remove') || input.includes('old')) {
+        professional += "• Safe removal and disposal of existing fence materials\n";
+        professional += "• Post extraction and hole filling as required\n";
+      }
+      professional += "• Property line verification and marking\n";
+      professional += "• Utility location and marking (call before you dig)\n";
+      professional += "• Site clearing and grading as necessary\n\n";
+      
+      professional += "2.2. Fence Installation\n";
+      professional += "• Precise measurement and layout of fence line\n";
+      professional += "• Post hole excavation to proper depth (typically 1/3 of post height)\n";
+      professional += "• Setting posts in concrete for maximum stability\n";
+      professional += "• Installation of rails, pickets, and hardware\n";
+      professional += "• Gate installation with appropriate hardware and latching\n\n";
+      
+      professional += "2.3. Materials and Specifications\n";
+      if (input.includes('privacy')) professional += "• Privacy fence design for maximum screening\n";
+      if (input.includes('6') || input.includes('six')) professional += "• 6-foot height specification\n";
+      professional += "• Pressure-treated lumber for posts and structural components\n";
+      professional += "• Galvanized or stainless steel fasteners for longevity\n";
+      professional += "• Quality fence boards with proper spacing\n\n";
+      
+      professional += "3. Quality Standards\n";
+      professional += "• All posts plumb and properly aligned\n";
+      professional += "• Consistent height and spacing throughout\n";
+      professional += "• Secure attachment of all components\n";
+      professional += "• Clean, professional appearance\n\n";
+      
+      professional += "4. Project Completion\n";
+      professional += "• Complete cleanup and debris removal\n";
+      professional += "• Final inspection and client walkthrough\n";
+      professional += "• Maintenance recommendations provided\n\n";
+      
+      professional += "5. Warranty\n";
+      professional += "• 2-year warranty on installation workmanship\n";
+      professional += "• Materials warranty as per manufacturer specifications";
+      
+    } else if (input.includes('paint') && (input.includes('exterior') || input.includes('outside') || input.includes('house'))) {
+      professional += "1. Project Overview\n\n";
+      professional += "This document outlines the scope of work for a professional exterior painting project at the residential property. The project includes all necessary preparation, labor, materials, and equipment to complete the job to the highest professional standards. The primary goal is to enhance the aesthetic appeal and protect the exterior surfaces of the home from the elements.\n\n";
+      
+      professional += "2. Detailed Scope of Work\n\n";
+      professional += "2.1. Surface Preparation\n";
+      professional += "• Power Washing: All exterior surfaces to be painted will be power washed to remove dirt, mildew, and loose paint\n";
+      professional += "• Scraping and Sanding: All loose and peeling paint will be scraped and sanded to create a smooth surface\n";
+      professional += "• Caulking: All cracks and gaps in siding, trim, and around windows will be caulked with high-quality, paintable caulk\n";
+      professional += "• Priming: All bare wood and repaired areas will be primed with high-quality exterior primer\n";
+      professional += "• Masking and Protection: All areas not to be painted will be masked and protected\n\n";
+      
+      professional += "2.2. Painting Application\n";
+      professional += "• Two-coat system will be applied to all surfaces for optimal coverage\n";
+      professional += "• High-quality exterior acrylic latex paint will be used\n";
+      professional += "• Application by combination of spraying, brushing, and rolling as appropriate\n\n";
+      
+      professional += "3. Materials and Equipment\n";
+      professional += "• Premium exterior paint and primers\n";
+      professional += "• Professional-grade brushes, rollers, and spray equipment\n";
+      professional += "• Drop cloths, masking materials, and protective coverings\n\n";
+      
+      professional += "4. Cleanup\n";
+      professional += "• Complete removal of all masking materials and drop cloths\n";
+      professional += "• Thorough cleanup of all work areas\n";
+      professional += "• Property left in clean and tidy condition\n\n";
+      
+      professional += "5. Warranty\n";
+      professional += "• Workmanship warranty for 2 years from completion date\n";
+      professional += "• Does not cover damage from structural issues or extreme weather conditions";
+      
+    } else if (input.includes('kitchen') || input.includes('cabinet')) {
+      professional += "1. Project Overview\n\n";
+      professional += "This document outlines the comprehensive scope of work for a kitchen renovation project. The project encompasses cabinet installation, countertop work, backsplash installation, and all associated finishing work to transform the kitchen space according to professional standards and client specifications.\n\n";
+      
+      professional += "2. Detailed Scope of Work\n\n";
+      professional += "2.1. Demolition and Preparation\n";
+      professional += "• Safe removal of existing cabinets, countertops, and fixtures as needed\n";
+      professional += "• Protection of adjacent areas with plastic sheeting and drop cloths\n";
+      professional += "• Proper disposal of demolition debris\n";
+      professional += "• Wall preparation and repair as necessary\n\n";
+      
+      professional += "2.2. Cabinet Installation\n";
+      if (input.includes('cabinet')) {
+        professional += "• Professional measurement and template creation\n";
+        professional += "• Precision installation with proper mounting and alignment\n";
+        professional += "• Hardware installation including hinges, handles, and drawer slides\n";
+        professional += "• Door and drawer adjustments for optimal operation\n\n";
+      }
+      
+      if (input.includes('counter')) {
+        professional += "2.3. Countertop Installation\n";
+        professional += "• Precise measurement and templating\n";
+        professional += "• Professional cutting and edge finishing\n";
+        professional += "• Secure mounting with appropriate support structures\n";
+        professional += "• Seaming and polishing as required\n\n";
+      }
+      
+      if (input.includes('tile') || input.includes('backsplash')) {
+        professional += "2.4. Backsplash Installation\n";
+        professional += "• Surface preparation and waterproof backing installation\n";
+        professional += "• Precision tile layout and cutting\n";
+        professional += "• Professional installation with proper spacing and alignment\n";
+        professional += "• Grouting with color-matched, stain-resistant grout\n";
+        professional += "• Final sealing and cleanup\n\n";
+      }
+      
+      professional += "3. Quality Standards\n";
+      professional += "• All work performed to industry standards and local building codes\n";
+      professional += "• Premium materials and professional-grade installation techniques\n";
+      professional += "• Final inspection and quality control walkthrough\n\n";
+      
+      professional += "4. Project Completion\n";
+      professional += "• Complete cleanup and debris removal\n";
+      professional += "• Final client walkthrough and approval\n";
+      professional += "• Care and maintenance instructions provided\n\n";
+      
+      professional += "5. Warranty\n";
+      professional += "• Installation workmanship guaranteed for 2 years\n";
+      professional += "• Materials warranty as per manufacturer specifications";
+      
     } else if (input.includes('bathroom') || input.includes('bath')) {
-      professional += "BATHROOM RENOVATION SCOPE:\n\n";
-      professional += "Project Overview:\n";
-      professional += "Comprehensive bathroom renovation including fixture installation, tiling, and finishing work.\n\n";
-      professional += "Detailed Work Description:\n";
-      if (input.includes('tile')) professional += "• Professional tile installation with waterproof backing and proper spacing\n";
-      if (input.includes('vanity')) professional += "• Vanity installation with plumbing connections and hardware\n";
-      if (input.includes('shower') || input.includes('tub')) professional += "• Shower/tub installation with proper waterproofing and sealing\n";
-      if (input.includes('paint')) professional += "• Moisture-resistant painting with proper surface preparation\n";
-      professional += "• Fixture installation and final connections\n";
-      professional += "• Final inspection and cleanup\n\n";
-      professional += "Quality Standards:\n";
-      professional += "All work meets local building codes with proper waterproofing and ventilation considerations.";
+      professional += "1. Project Overview\n\n";
+      professional += "This document details the scope of work for a comprehensive bathroom renovation project. The work includes fixture installation, tiling, plumbing connections, and all finishing work necessary to complete a fully functional and aesthetically pleasing bathroom space.\n\n";
+      
+      professional += "2. Detailed Scope of Work\n\n";
+      professional += "2.1. Preparation and Demolition\n";
+      professional += "• Careful removal of existing fixtures and finishes\n";
+      professional += "• Proper protection of surrounding areas\n";
+      professional += "• Debris removal and disposal\n";
+      professional += "• Surface preparation for new installations\n\n";
+      
+      if (input.includes('tile')) {
+        professional += "2.2. Tile Installation\n";
+        professional += "• Waterproof membrane installation on all wet areas\n";
+        professional += "• Precision layout and cutting for optimal appearance\n";
+        professional += "• Professional installation with proper spacing and leveling\n";
+        professional += "• High-quality grouting with mildew-resistant grout\n";
+        professional += "• Final sealing of all joints and penetrations\n\n";
+      }
+      
+      if (input.includes('vanity')) {
+        professional += "2.3. Vanity Installation\n";
+        professional += "• Secure mounting with proper wall anchoring\n";
+        professional += "• Plumbing connections for supply and drain lines\n";
+        professional += "• Hardware installation and adjustments\n";
+        professional += "• Countertop integration and sealing\n\n";
+      }
+      
+      if (input.includes('shower') || input.includes('tub')) {
+        professional += "2.4. Shower/Tub Installation\n";
+        professional += "• Proper waterproofing and vapor barrier installation\n";
+        professional += "• Fixture placement and secure mounting\n";
+        professional += "• Plumbing connections and testing\n";
+        professional += "• Trim and finishing work\n\n";
+      }
+      
+      professional += "3. Building Code Compliance\n";
+      professional += "• All work meets local building and plumbing codes\n";
+      professional += "• Proper ventilation considerations\n";
+      professional += "• GFCI electrical requirements compliance\n\n";
+      
+      professional += "4. Final Inspection and Cleanup\n";
+      professional += "• Complete system testing and functionality check\n";
+      professional += "• Thorough cleaning and debris removal\n";
+      professional += "• Client walkthrough and operation demonstration\n\n";
+      
+      professional += "5. Warranty Coverage\n";
+      professional += "• 2-year workmanship warranty on all installations\n";
+      professional += "• Manufacturer warranties on fixtures and materials apply";
+      
     } else if (input.includes('deck') || input.includes('patio')) {
-      professional += "OUTDOOR CONSTRUCTION SCOPE:\n\n";
-      professional += "Project Overview:\n";
-      professional += "Professional deck/patio construction with structural integrity and weather resistance.\n\n";
-      professional += "Detailed Work Description:\n";
-      if (input.includes('deck')) professional += "• Structural deck framing with proper joist spacing and support\n";
-      if (input.includes('rail')) professional += "• Safety railing installation meeting local building codes\n";
-      if (input.includes('stain') || input.includes('seal')) professional += "• Professional staining and sealing for weather protection\n";
-      professional += "• Hardware installation with corrosion-resistant fasteners\n";
-      professional += "• Site cleanup and final inspection\n\n";
-      professional += "Quality Standards:\n";
-      professional += "Construction meets all local building codes with proper permits where required.";
+      professional += "1. Project Overview\n\n";
+      professional += "This document outlines the scope of work for professional deck construction. The project includes structural framing, decking installation, railing systems, and all finishing work necessary to create a safe, durable, and attractive outdoor living space.\n\n";
+      
+      professional += "2. Detailed Scope of Work\n\n";
+      professional += "2.1. Site Preparation\n";
+      professional += "• Site survey and layout marking\n";
+      professional += "• Excavation for footings and support structures\n";
+      professional += "• Utility location and marking\n";
+      professional += "• Proper drainage considerations\n\n";
+      
+      if (input.includes('deck')) {
+        professional += "2.2. Structural Framework\n";
+        professional += "• Concrete footings poured to proper depth\n";
+        professional += "• Pressure-treated lumber for all structural components\n";
+        professional += "• Proper joist spacing and support beam installation\n";
+        professional += "• Ledger board attachment with appropriate fasteners\n";
+        professional += "• Structural inspection and approval\n\n";
+        
+        professional += "2.3. Decking Installation\n";
+        professional += "• Premium decking material installation\n";
+        professional += "• Proper spacing for drainage and expansion\n";
+        professional += "• Corrosion-resistant fasteners throughout\n";
+        professional += "• Precision cutting and edge finishing\n\n";
+      }
+      
+      if (input.includes('rail')) {
+        professional += "2.4. Railing System\n";
+        professional += "• Code-compliant railing height and spacing\n";
+        professional += "• Secure post installation and bracing\n";
+        professional += "• Professional-grade railing components\n";
+        professional += "• Safety inspection and load testing\n\n";
+      }
+      
+      if (input.includes('stain') || input.includes('seal')) {
+        professional += "2.5. Finishing and Protection\n";
+        professional += "• Surface preparation and cleaning\n";
+        professional += "• Premium stain application for weather protection\n";
+        professional += "• Clear sealer for additional moisture protection\n";
+        professional += "• Multiple coat application as needed\n\n";
+      }
+      
+      professional += "3. Building Code Compliance\n";
+      professional += "• All construction meets local building codes\n";
+      professional += "• Proper permits obtained where required\n";
+      professional += "• Structural engineering specifications followed\n\n";
+      
+      professional += "4. Project Completion\n";
+      professional += "• Final safety inspection and testing\n";
+      professional += "• Complete site cleanup and debris removal\n";
+      professional += "• Client walkthrough and maintenance instructions\n\n";
+      
+      professional += "5. Warranty\n";
+      professional += "• 5-year structural warranty on framing and construction\n";
+      professional += "• 2-year warranty on finish work and staining";
+      
     } else {
-      professional += "PROJECT SCOPE OF WORK:\n\n";
-      professional += "Project Overview:\n";
-      professional += "Professional handyman services including assessment, preparation, installation, and finishing work.\n\n";
-      professional += "Detailed Work Description:\n";
-      professional += "• Initial project assessment and material planning\n";
-      professional += "• Site preparation and protection of surrounding areas\n";
+      // Generic handyman work with more detail
+      professional += "1. Project Overview\n\n";
+      professional += "This document outlines the scope of work for professional handyman services. The project encompasses assessment, preparation, installation, and finishing work to complete the requested improvements according to professional standards and industry best practices.\n\n";
+      
+      professional += "2. Detailed Scope of Work\n\n";
+      professional += "2.1. Initial Assessment and Planning\n";
+      professional += "• Comprehensive evaluation of existing conditions\n";
+      professional += "• Material requirements assessment and procurement\n";
+      professional += "• Work area preparation and protection\n";
+      professional += "• Safety planning and equipment setup\n\n";
+      
+      professional += "2.2. Preparation Work\n";
+      professional += "• Protection of surrounding areas with drop cloths and masking\n";
+      professional += "• Existing surface preparation as required\n";
+      professional += "• Utility location and safety considerations\n";
+      professional += "• Workspace organization for efficient completion\n\n";
+      
+      professional += "2.3. Installation and Repair Work\n";
       professional += "• Professional installation using industry-standard techniques\n";
-      professional += "• Quality control inspections throughout the process\n";
-      professional += "• Final cleanup and client walkthrough\n\n";
-      professional += "Quality Standards:\n";
-      professional += "All work performed to professional standards with attention to detail and customer satisfaction. Materials and workmanship guaranteed.";
+      professional += "• Quality materials and appropriate fasteners/adhesives\n";
+      professional += "• Precision measurements and level/plumb installation\n";
+      professional += "• Multiple quality control checks throughout process\n\n";
+      
+      professional += "2.4. Finishing Work\n";
+      professional += "• Final adjustments and fine-tuning\n";
+      professional += "• Touch-up work and detail finishing\n";
+      professional += "• Hardware installation and operation testing\n";
+      professional += "• Surface cleaning and preparation for use\n\n";
+      
+      professional += "3. Quality Assurance\n";
+      professional += "• Work performed to professional trade standards\n";
+      professional += "• Materials selected for durability and performance\n";
+      professional += "• Final inspection and testing of all work\n\n";
+      
+      professional += "4. Project Completion\n";
+      professional += "• Complete cleanup and debris removal\n";
+      professional += "• Final client walkthrough and approval\n";
+      professional += "• Care and maintenance recommendations provided\n\n";
+      
+      professional += "5. Warranty\n";
+      professional += "• 1-year workmanship warranty on all completed work\n";
+      professional += "• Materials warranty as per manufacturer specifications\n";
+      professional += "• Customer satisfaction guarantee";
     }
     
     return professional;
@@ -364,9 +695,9 @@ function App() {
             <tr><th>Line Item Description</th><th>PRICE</th><th>SUBTOTAL</th></tr>
           </thead>
           <tbody>
-            ${estimate.materials.map(item => `<tr><td>${item.description} (Materials)</td><td>$${item.rate.toFixed(2)}</td><td>$${item.amount.toFixed(2)}</td></tr>`).join('')}
-            ${estimate.labor.map(item => `<tr><td>${item.description} (${item.hours} hours @ $${item.rate.toFixed(2)}/hr)</td><td>$${item.rate.toFixed(2)}</td><td>$${item.amount.toFixed(2)}</td></tr>`).join('')}
-            ${estimate.additionalServices.map(item => `<tr><td>${item.description}</td><td>$${item.rate.toFixed(2)}</td><td>$${item.amount.toFixed(2)}</td></tr>`).join('')}
+            ${estimate.materials.map(item => `<tr><td>${item.description} (Materials)</td><td>${item.rate.toFixed(2)}</td><td>${item.amount.toFixed(2)}</td></tr>`).join('')}
+            ${estimate.labor.map(item => `<tr><td>${item.description} (${item.hours} hours @ ${item.rate.toFixed(2)}/hr)</td><td>${item.rate.toFixed(2)}</td><td>${item.amount.toFixed(2)}</td></tr>`).join('')}
+            ${estimate.additionalServices.map(item => `<tr><td>${item.description}</td><td>${item.rate.toFixed(2)}</td><td>${item.amount.toFixed(2)}</td></tr>`).join('')}
           </tbody>
         </table>
         
@@ -376,10 +707,10 @@ function App() {
             <p>Terms: Payment is due at time of service unless otherwise specified. Net-30 terms available by prior arrangement. All work is guaranteed for 90 days from completion. Late payments subject to 1.5% monthly service charge. Disputes must be submitted within 10 days of invoice date.</p>
           </div>
           <div class="totals">
-            <div class="total-line"><span>Sub-total:</span><span>$${estimate.subtotal.toFixed(2)}</span></div>
+            <div class="total-line"><span>Sub-total:</span><span>${estimate.subtotal.toFixed(2)}</span></div>
             <div class="total-line"><span>Discount:</span><span>$0.00</span></div>
-            <div class="total-line"><span>tax (8%):</span><span>$${estimate.tax.toFixed(2)}</span></div>
-            <div class="total-line final"><span>TOTAL:</span><span>$${estimate.total.toFixed(2)}</span></div>
+            <div class="total-line"><span>tax (8%):</span><span>${estimate.tax.toFixed(2)}</span></div>
+            <div class="total-line final"><span>TOTAL:</span><span>${estimate.total.toFixed(2)}</span></div>
           </div>
         </div>
         
@@ -764,29 +1095,46 @@ function App() {
                   <input type="text" value={newEstimate.title} onChange={(e) => setNewEstimate(prev => ({ ...prev, title: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea value={newEstimate.description} onChange={(e) => setNewEstimate(prev => ({ ...prev, description: e.target.value }))} rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Scope of Work (Optional - will appear on separate letterhead page)</label>
-                  <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">🤖 AI Scope Generator</h4>
-                    <p className="text-xs text-blue-600 mb-3">Enter rough project details and let AI create a professional scope of work</p>
-                    <div className="space-y-3">
-                      <textarea value={rawScopeInput} onChange={(e) => setRawScopeInput(e.target.value)} rows={3} placeholder="e.g., 'Install new kitchen cabinets, replace countertops, tile backsplash, paint walls'" className="w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                      <button type="button" onClick={generateProfessionalScope} disabled={isGeneratingScope || !rawScopeInput.trim()} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm">
-                        {isGeneratingScope ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            <span>Generating Professional Scope...</span>
-                          </>
-                        ) : (
-                          <span>Generate Professional Scope with AI</span>
-                        )}
-                      </button>
-                    </div>
+                  <label className="block text-sm font-medium text-gray-700">Raw Scope of Work (Your Notes)</label>
+                  <div className="mb-4">
+                    <textarea 
+                      value={rawScopeInput} 
+                      onChange={(e) => setRawScopeInput(e.target.value)} 
+                      rows={4} 
+                      placeholder="Enter your rough scope here - use your normal language. Example: 'fix the busted kitchen cabinets, patch some holes in drywall, paint everything white'"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={generateProfessionalScope} 
+                      disabled={isGeneratingScope || !rawScopeInput.trim()} 
+                      className="mt-3 w-full px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {isGeneratingScope ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                          <span>Generating Professional Scope...</span>
+                        </>
+                      ) : (
+                        <span>🤖 Generate Professional Scope</span>
+                      )}
+                    </button>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Professional Scope of Work (Optional - will appear on separate letterhead page)</label>
                   <textarea value={newEstimate.scope} onChange={(e) => setNewEstimate(prev => ({ ...prev, scope: e.target.value }))} rows={8} placeholder="Professional scope of work will appear here, or you can type manually..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                  
+                  {newEstimate.scope && (
+                    <button 
+                      type="button" 
+                      onClick={() => generateLineItemsFromScope()} 
+                      className="mt-3 w-full px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 flex items-center justify-center space-x-2"
+                    >
+                      <span>🤖 Generate Line Items with AI</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-6">
