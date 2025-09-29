@@ -1178,3 +1178,186 @@ Generate a professional scope of work:`
             </div>
           </div>
         )}
+</main>
+      
+      {showNewEstimateForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
+          <div className="relative top-4 sm:top-20 mx-auto border w-full max-w-5xl shadow-lg rounded-md bg-white">
+            <div className="p-3 sm:p-5">
+              <h3 className="text-lg font-medium mb-4" style={{ color: companyInfo.secondaryColor }}>New Estimate</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Client</label>
+                    <select value={newEstimate.clientId} onChange={(e) => setNewEstimate(prev => ({ ...prev, clientId: parseInt(e.target.value) }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                      <option value="">Select a client</option>
+                      {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Valid Until</label>
+                    <input type="date" value={newEstimate.validUntil} onChange={(e) => setNewEstimate(prev => ({ ...prev, validUntil: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Title</label>
+                  <input type="text" value={newEstimate.title} onChange={(e) => setNewEstimate(prev => ({ ...prev, title: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Raw Scope of Work (Your Notes)</label>
+                  <div className="mb-4">
+                    <textarea 
+                      value={rawScopeInput} 
+                      onChange={(e) => setRawScopeInput(e.target.value)} 
+                      rows={4} 
+                      placeholder="Enter your rough scope here"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={generateProfessionalScope} 
+                      disabled={isGeneratingScope || !rawScopeInput.trim()} 
+                      className="mt-3 w-full px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {isGeneratingScope ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <span>🤖 Generate Professional Scope with AI Learning</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Professional Scope of Work</label>
+                  <textarea value={newEstimate.scope} onChange={(e) => setNewEstimate(prev => ({ ...prev, scope: e.target.value }))} rows={6} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                  
+                  {newEstimate.scope && (
+                    <button 
+                      type="button" 
+                      onClick={() => generateLineItemsFromScope()} 
+                      className="mt-3 w-full px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600"
+                    >
+                      🤖 Generate Line Items
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">Materials</label>
+                    <button type="button" onClick={() => addEstimateItem('materials')} className="text-white px-3 py-1 rounded text-sm" style={{ backgroundColor: companyInfo.primaryColor }}>Add Material</button>
+                  </div>
+                  {newEstimate.materials.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-2 mb-2">
+                      <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('materials', index, 'description', e.target.value)} className="col-span-5 rounded-md border-gray-300 text-sm" />
+                      <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateEstimateItem('materials', index, 'quantity', parseFloat(e.target.value) || 0)} className="col-span-2 rounded-md border-gray-300 text-sm" />
+                      <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('materials', index, 'rate', parseFloat(e.target.value) || 0)} className="col-span-2 rounded-md border-gray-300 text-sm" />
+                      <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="col-span-2 rounded-md border-gray-300 bg-gray-50 text-sm" />
+                      <button type="button" onClick={() => removeEstimateItem('materials', index)} className="col-span-1 text-red-600 text-sm">×</button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">Labor</label>
+                    <button type="button" onClick={() => addEstimateItem('labor')} className="text-white px-3 py-1 rounded text-sm" style={{ backgroundColor: companyInfo.primaryColor }}>Add Labor</button>
+                  </div>
+                  {newEstimate.labor.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-2 mb-2">
+                      <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('labor', index, 'description', e.target.value)} className="col-span-5 rounded-md border-gray-300 text-sm" />
+                      <input type="number" placeholder="Hours" value={item.hours} onChange={(e) => updateEstimateItem('labor', index, 'hours', parseFloat(e.target.value) || 0)} className="col-span-2 rounded-md border-gray-300 text-sm" />
+                      <input type="number" placeholder="Rate" value={item.rate} onChange={(e) => updateEstimateItem('labor', index, 'rate', parseFloat(e.target.value) || 0)} className="col-span-2 rounded-md border-gray-300 text-sm" />
+                      <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="col-span-2 rounded-md border-gray-300 bg-gray-50 text-sm" />
+                      <button type="button" onClick={() => removeEstimateItem('labor', index)} className="col-span-1 text-red-600 text-sm">×</button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6">
+                  <div className="flex justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">Additional Services</label>
+                    <button type="button" onClick={() => addEstimateItem('additionalServices')} className="text-white px-3 py-1 rounded text-sm" style={{ backgroundColor: companyInfo.primaryColor }}>Add Service</button>
+                  </div>
+                  {newEstimate.additionalServices.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-2 mb-2">
+                      <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('additionalServices', index, 'description', e.target.value)} className="col-span-5 rounded-md border-gray-300 text-sm" />
+                      <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateEstimateItem('additionalServices', index, 'quantity', parseFloat(e.target.value) || 0)} className="col-span-2 rounded-md border-gray-300 text-sm" />
+                      <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('additionalServices', index, 'rate', parseFloat(e.target.value) || 0)} className="col-span-2 rounded-md border-gray-300 text-sm" />
+                      <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="col-span-2 rounded-md border-gray-300 bg-gray-50 text-sm" />
+                      <button type="button" onClick={() => removeEstimateItem('additionalServices', index)} className="col-span-1 text-red-600 text-sm">×</button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 p-4 rounded" style={{ backgroundColor: `${companyInfo.secondaryColor}10` }}>
+                  <div className="text-right space-y-2">
+                    <div className="flex justify-between"><span>Materials:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).materialsTotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Labor:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).laborTotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Services:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).servicesTotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Subtotal:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).subtotal.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Tax (8%):</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).tax.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold text-lg border-t pt-2" style={{ color: companyInfo.primaryColor }}><span>Total:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).total.toFixed(2)}</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-6">
+                <button type="button" onClick={() => setShowNewEstimateForm(false)} className="px-6 py-2 border rounded-lg">Cancel</button>
+                <button type="button" onClick={saveEstimate} className="px-6 py-2 text-white rounded-lg" style={{ backgroundColor: companyInfo.primaryColor }}>
+                  <Save className="w-4 h-4 inline mr-2" />
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewClientForm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
+          <div className="relative top-20 mx-auto border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="p-5">
+              <h3 className="text-lg font-medium mb-4" style={{ color: companyInfo.secondaryColor }}>New Client</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input type="text" value={newClient.name} onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Company</label>
+                  <input type="text" value={newClient.company} onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input type="email" value={newClient.email} onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <input type="tel" value={newClient.phone} onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <textarea value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))} rows={3} className="mt-1 block w-full rounded-md border-gray-300" />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-4 mt-6">
+                <button type="button" onClick={() => setShowNewClientForm(false)} className="px-6 py-2 border rounded-lg">Cancel</button>
+                <button type="button" onClick={saveClient} className="px-6 py-2 bg-gray-600 text-white rounded-lg">
+                  <Save className="w-4 h-4 inline mr-2" />
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
