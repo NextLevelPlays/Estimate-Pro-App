@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2, Users, FileText, Settings, BookOpen, Plus,
   Mail, Download, Eye, DollarSign, CheckCircle, Briefcase,
@@ -20,56 +20,79 @@ function App() {
 
   const BLACKSTON_LOGO = "/Blackston-logo.png";
   
-  const [clients, setClients] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john@smithhome.com',
-      phone: '(555) 123-4567',
-      address: '123 Main St, Denver, CO 80202',
-      company: 'Smith Residence'
-    }
-  ]);
+  // Load data from localStorage on mount
+  const [clients, setClients] = useState(() => {
+    const saved = localStorage.getItem('blackston_clients');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 1,
+        name: 'John Smith',
+        email: 'john@smithhome.com',
+        phone: '(555) 123-4567',
+        address: '123 Main St, Denver, CO 80202',
+        company: 'Smith Residence'
+      }
+    ];
+  });
 
-  const [estimates, setEstimates] = useState([
-    {
-      id: 1,
-      clientId: 1,
-      title: 'Kitchen Remodel Estimate',
-      description: 'Complete kitchen renovation',
-      scope: '',
-      materials: [
-        { description: 'Custom Kitchen Cabinets', quantity: 1, rate: 8500.00, amount: 8500.00 }
-      ],
-      labor: [
-        { description: 'Cabinet Installation', hours: 40, rate: 75.00, amount: 3000.00 }
-      ],
-      additionalServices: [
-        { description: 'Debris Removal', quantity: 1, rate: 300.00, amount: 300.00 }
-      ],
-      subtotal: 11800.00,
-      tax: 944.00,
-      total: 12744.00,
-      status: 'pending',
-      createdAt: '2024-01-15',
-      validUntil: '2024-02-15'
-    }
-  ]);
+  const [estimates, setEstimates] = useState(() => {
+    const saved = localStorage.getItem('blackston_estimates');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 1,
+        clientId: 1,
+        title: 'Kitchen Remodel Estimate',
+        description: 'Complete kitchen renovation',
+        scope: '',
+        materials: [
+          { description: 'Custom Kitchen Cabinets', quantity: 1, rate: 8500.00, amount: 8500.00 }
+        ],
+        labor: [
+          { description: 'Cabinet Installation', hours: 40, rate: 75.00, amount: 3000.00 }
+        ],
+        additionalServices: [
+          { description: 'Debris Removal', quantity: 1, rate: 300.00, amount: 300.00 }
+        ],
+        subtotal: 11800.00,
+        tax: 944.00,
+        total: 12744.00,
+        status: 'pending',
+        createdAt: '2024-01-15',
+        validUntil: '2024-02-15'
+      }
+    ];
+  });
 
-  const [jobs, setJobs] = useState([
-    {
-      id: 1,
-      estimateId: 1,
-      clientId: 1,
-      title: 'Kitchen Remodel',
-      status: 'in-progress',
-      startDate: '2024-01-20',
-      estimatedCompletion: '2024-03-15',
-      actualHours: 120,
-      estimatedHours: 200,
-      notes: 'Project progressing well.'
-    }
-  ]);
+  const [jobs, setJobs] = useState(() => {
+    const saved = localStorage.getItem('blackston_jobs');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 1,
+        estimateId: 1,
+        clientId: 1,
+        title: 'Kitchen Remodel',
+        status: 'in-progress',
+        startDate: '2024-01-20',
+        estimatedCompletion: '2024-03-15',
+        actualHours: 120,
+        estimatedHours: 200,
+        notes: 'Project progressing well.'
+      }
+    ];
+  });
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('blackston_clients', JSON.stringify(clients));
+  }, [clients]);
+
+  useEffect(() => {
+    localStorage.setItem('blackston_estimates', JSON.stringify(estimates));
+  }, [estimates]);
+
+  useEffect(() => {
+    localStorage.setItem('blackston_jobs', JSON.stringify(jobs));
+  }, [jobs]);
 
   const [showNewEstimateForm, setShowNewEstimateForm] = useState(false);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
@@ -219,6 +242,40 @@ function App() {
     });
     setSelectedEstimates([]);
     setShowBulkActions(false);
+  };
+
+  // NEW: Find similar past estimates for AI learning
+  const findSimilarEstimates = (rawInput) => {
+    const input = rawInput.toLowerCase();
+    const keywords = {
+      fence: ['fence', 'fencing', 'gate', 'post'],
+      paint: ['paint', 'painting', 'exterior', 'interior'],
+      kitchen: ['kitchen', 'cabinet', 'countertop', 'backsplash'],
+      bathroom: ['bathroom', 'bath', 'vanity', 'shower', 'tub'],
+      deck: ['deck', 'decking', 'railing', 'patio'],
+      general: []
+    };
+
+    // Determine project type from input
+    let projectType = 'general';
+    for (const [type, words] of Object.entries(keywords)) {
+      if (words.some(word => input.includes(word))) {
+        projectType = type;
+        break;
+      }
+    }
+
+    // Find past estimates with scopes that match this project type
+    const similar = estimates
+      .filter(est => est.scope && est.scope.trim().length > 100) // Only estimates with good scopes
+      .filter(est => {
+        const scopeLower = est.scope.toLowerCase();
+        if (projectType === 'general') return true;
+        return keywords[projectType].some(word => scopeLower.includes(word));
+      })
+      .slice(-3); // Get up to 3 most recent similar estimates
+
+    return similar;
   };
 
   const generateLineItemsFromScope = () => {
@@ -393,6 +450,18 @@ function App() {
   };
 
   const callClaudeAPI = async (rawInput) => {
+    // Find similar past estimates to use as examples
+    const similarEstimates = findSimilarEstimates(rawInput);
+    
+    let examplesText = '';
+    if (similarEstimates.length > 0) {
+      examplesText = '\n\nHere are examples of how I previously formatted similar projects:\n\n';
+      similarEstimates.forEach((est, index) => {
+        examplesText += `EXAMPLE ${index + 1}:\n${est.scope}\n\n`;
+      });
+      examplesText += 'Please use these examples as a guide for formatting style, level of detail, and structure. Match this style exactly.\n\n';
+    }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -405,7 +474,7 @@ function App() {
         max_tokens: 2048,
         messages: [{
           role: 'user',
-          content: `You are a professional handyman services estimator. Convert the following rough project notes into a professional, detailed scope of work. 
+          content: `You are a professional handyman services estimator for Blackston Handyman Services, LLC. Convert the following rough project notes into a professional, detailed scope of work.
 
 IMPORTANT FORMATTING RULES:
 - Use a numbered list format (1., 2., 3., etc.)
@@ -414,7 +483,7 @@ IMPORTANT FORMATTING RULES:
 - Include labor hours and team size when mentioned
 - Break down the work into logical sections
 - End with a professional closing statement mentioning Blackston Handyman Services, LLC
-
+${examplesText}
 Raw project notes:
 ${rawInput}
 
@@ -618,7 +687,6 @@ Generate a professional scope of work:`
                 ))}
               </div>
               
-              {/* Mobile Menu */}
               <div className="md:hidden">
                 <select 
                   value={currentPage} 
@@ -767,7 +835,6 @@ Generate a professional scope of work:`
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Estimates</h1>
               
-              {/* Search and Filter Controls */}
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                 <div className="flex-1 sm:w-64">
                   <input
@@ -791,7 +858,6 @@ Generate a professional scope of work:`
               </div>
             </div>
 
-            {/* Bulk Actions Bar */}
             {selectedEstimates.length > 0 && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -835,7 +901,6 @@ Generate a professional scope of work:`
               </div>
             )}
 
-            {/* Select All/None */}
             {filteredEstimates.length > 0 && (
               <div className="flex justify-between items-center">
                 <button
@@ -947,7 +1012,6 @@ Generate a professional scope of work:`
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Clients</h1>
               
-              {/* Search Control */}
               <div className="w-full sm:w-64">
                 <input
                   type="text"
@@ -1005,7 +1069,6 @@ Generate a professional scope of work:`
           <div className="space-y-6">
             <h1 className="text-3xl font-bold" style={{ color: companyInfo.secondaryColor }}>Settings</h1>
             
-            {/* API Key Section */}
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-semibold mb-4" style={{ color: companyInfo.secondaryColor }}>Claude AI Configuration</h2>
               <div className="space-y-4">
@@ -1028,7 +1091,7 @@ Generate a professional scope of work:`
                       onClick={() => setShowApiKey(!showApiKey)}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                     >
-                      {showApiKey ? <Eye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => saveApiKey(claudeApiKey)}
@@ -1093,16 +1156,18 @@ Generate a professional scope of work:`
                   <li>Navigate between different sections using the top menu</li>
                   <li>Track your business performance with key metrics</li>
                 </ol>
-                <h3 style={{ color: companyInfo.primaryColor }}>AI Scope Generator</h3>
-                <p>Use the AI Scope Generator to transform rough project notes into professional scope documents:</p>
+                <h3 style={{ color: companyInfo.primaryColor }}>AI Scope Generator with Learning</h3>
+                <p>The AI learns from your past estimates to match your style:</p>
                 <ol>
                   <li>When creating a new estimate, scroll to the "Scope of Work" section</li>
                   <li>Enter rough project details in the AI input box</li>
                   <li>Click "Generate Professional Scope with AI"</li>
+                  <li>The AI will automatically find similar past projects and match that style</li>
                   <li>Review and edit the generated scope as needed</li>
+                  <li>The more estimates you create, the smarter it gets!</li>
                 </ol>
                 <h3 style={{ color: companyInfo.primaryColor }}>Search and Bulk Actions</h3>
-                <p>New features to speed up your workflow:</p>
+                <p>Features to speed up your workflow:</p>
                 <ol>
                   <li>Use the search bars to quickly find estimates or clients</li>
                   <li>Filter estimates by status to focus on pending or approved items</li>
@@ -1113,237 +1178,3 @@ Generate a professional scope of work:`
             </div>
           </div>
         )}
-      </main>
-      
-      {showNewEstimateForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
-          <div className="relative top-4 sm:top-20 mx-auto border w-full max-w-5xl shadow-lg rounded-md bg-white">
-            <div className="p-3 sm:p-5">
-              <h3 className="text-lg font-medium mb-4" style={{ color: companyInfo.secondaryColor }}>New Estimate</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Client</label>
-                    <select value={newEstimate.clientId} onChange={(e) => setNewEstimate(prev => ({ ...prev, clientId: parseInt(e.target.value) }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                      <option value="">Select a client</option>
-                      {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Valid Until</label>
-                    <input type="date" value={newEstimate.validUntil} onChange={(e) => setNewEstimate(prev => ({ ...prev, validUntil: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Title</label>
-                  <input type="text" value={newEstimate.title} onChange={(e) => setNewEstimate(prev => ({ ...prev, title: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Raw Scope of Work (Your Notes)</label>
-                  <div className="mb-4">
-                    <textarea 
-                      value={rawScopeInput} 
-                      onChange={(e) => setRawScopeInput(e.target.value)} 
-                      rows={4} 
-                      placeholder="Enter your rough scope here - use your normal language. Example: 'fix the busted kitchen cabinets, patch some holes in drywall, paint everything white'"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                    <button 
-                      type="button" 
-                      onClick={generateProfessionalScope} 
-                      disabled={isGeneratingScope || !rawScopeInput.trim()} 
-                      className="mt-3 w-full px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                    >
-                      {isGeneratingScope ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                          <span>Generating Professional Scope...</span>
-                        </>
-                      ) : (
-                        <span>🤖 Generate Professional Scope</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Professional Scope of Work (Optional - will appear on separate letterhead page)</label>
-                  <textarea value={newEstimate.scope} onChange={(e) => setNewEstimate(prev => ({ ...prev, scope: e.target.value }))} rows={6} placeholder="Professional scope of work will appear here, or you can type manually..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                  
-                  {newEstimate.scope && (
-                    <button 
-                      type="button" 
-                      onClick={() => generateLineItemsFromScope()} 
-                      className="mt-3 w-full px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-600 flex items-center justify-center space-x-2"
-                    >
-                      <span>🤖 Generate Line Items with AI</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Materials Section - Mobile Optimized */}
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
-                    <label className="block text-sm font-medium text-gray-700">Materials</label>
-                    <button type="button" onClick={() => addEstimateItem('materials')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 w-full sm:w-auto" style={{ backgroundColor: companyInfo.primaryColor }}>Add Material</button>
-                  </div>
-                  <div className="space-y-2">
-                    {newEstimate.materials.map((item, index) => (
-                      <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 border rounded-lg sm:p-0 sm:border-0 sm:rounded-none">
-                        <div className="sm:col-span-5">
-                          <label className="block text-xs text-gray-500 sm:hidden">Description</label>
-                          <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('materials', index, 'description', e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Quantity</label>
-                          <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateEstimateItem('materials', index, 'quantity', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Price</label>
-                          <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('materials', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Total</label>
-                          <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="w-full rounded-md border-gray-300 bg-gray-50 text-sm" />
-                        </div>
-                        <div className="sm:col-span-1 flex justify-center">
-                          <button type="button" onClick={() => removeEstimateItem('materials', index)} className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded">Remove</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Labor Section - Mobile Optimized */}
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
-                    <label className="block text-sm font-medium text-gray-700">Labor</label>
-                    <button type="button" onClick={() => addEstimateItem('labor')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 w-full sm:w-auto" style={{ backgroundColor: companyInfo.primaryColor }}>Add Labor</button>
-                  </div>
-                  <div className="space-y-2">
-                    {newEstimate.labor.map((item, index) => (
-                      <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 border rounded-lg sm:p-0 sm:border-0 sm:rounded-none">
-                        <div className="sm:col-span-5">
-                          <label className="block text-xs text-gray-500 sm:hidden">Description</label>
-                          <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('labor', index, 'description', e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Hours</label>
-                          <input type="number" placeholder="Hours" value={item.hours} onChange={(e) => updateEstimateItem('labor', index, 'hours', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Rate</label>
-                          <input type="number" placeholder="Rate" value={item.rate} onChange={(e) => updateEstimateItem('labor', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Total</label>
-                          <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="w-full rounded-md border-gray-300 bg-gray-50 text-sm" />
-                        </div>
-                        <div className="sm:col-span-1 flex justify-center">
-                          <button type="button" onClick={() => removeEstimateItem('labor', index)} className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded">Remove</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Additional Services Section - Mobile Optimized */}
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
-                    <label className="block text-sm font-medium text-gray-700">Additional Services</label>
-                    <button type="button" onClick={() => addEstimateItem('additionalServices')} className="text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 w-full sm:w-auto" style={{ backgroundColor: companyInfo.primaryColor }}>Add Service</button>
-                  </div>
-                  <div className="space-y-2">
-                    {newEstimate.additionalServices.map((item, index) => (
-                      <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 border rounded-lg sm:p-0 sm:border-0 sm:rounded-none">
-                        <div className="sm:col-span-5">
-                          <label className="block text-xs text-gray-500 sm:hidden">Description</label>
-                          <input type="text" placeholder="Description" value={item.description} onChange={(e) => updateEstimateItem('additionalServices', index, 'description', e.target.value)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Quantity</label>
-                          <input type="number" placeholder="Qty" value={item.quantity} onChange={(e) => updateEstimateItem('additionalServices', index, 'quantity', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Price</label>
-                          <input type="number" placeholder="Price" value={item.rate} onChange={(e) => updateEstimateItem('additionalServices', index, 'rate', parseFloat(e.target.value) || 0)} className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 sm:hidden">Total</label>
-                          <input type="text" value={`${(item.amount || 0).toFixed(2)}`} readOnly className="w-full rounded-md border-gray-300 bg-gray-50 text-sm" />
-                        </div>
-                        <div className="sm:col-span-1 flex justify-center">
-                          <button type="button" onClick={() => removeEstimateItem('additionalServices', index)} className="text-red-600 hover:text-red-800 text-sm px-2 py-1 rounded">Remove</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 p-4 rounded" style={{ backgroundColor: `${companyInfo.secondaryColor}10` }}>
-                  <div className="text-right space-y-2">
-                    <div className="flex justify-between"><span>Materials Total:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).materialsTotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span>Labor Total:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).laborTotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span>Additional Services:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).servicesTotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span>Subtotal:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).subtotal.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span>Tax (8%):</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).tax.toFixed(2)}</span></div>
-                    <div className="flex justify-between font-semibold text-lg border-t pt-2" style={{ color: companyInfo.primaryColor }}><span>Total:</span><span>${calculateEstimateTotal(newEstimate.materials, newEstimate.labor, newEstimate.additionalServices).total.toFixed(2)}</span></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 mt-6">
-                <button type="button" onClick={() => setShowNewEstimateForm(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="button" onClick={saveEstimate} className="px-6 py-2 text-white rounded-lg flex items-center justify-center space-x-2 hover:bg-opacity-90" style={{ backgroundColor: companyInfo.primaryColor }}>
-                  <Save className="w-4 h-4" />
-                  <span>Save Estimate</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showNewClientForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
-          <div className="relative top-4 sm:top-20 mx-auto border w-full max-w-2xl shadow-lg rounded-md bg-white">
-            <div className="p-3 sm:p-5">
-              <h3 className="text-lg font-medium mb-4" style={{ color: companyInfo.secondaryColor }}>New Client</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input type="text" value={newClient.name} onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Company</label>
-                  <input type="text" value={newClient.company} onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input type="email" value={newClient.email} onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <input type="tel" value={newClient.phone} onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Address</label>
-                  <textarea value={newClient.address} onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))} rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 mt-6">
-                <button type="button" onClick={() => setShowNewClientForm(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="button" onClick={saveClient} className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center space-x-2">
-                  <Save className="w-4 h-4" />
-                  <span>Save Client</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default App;
