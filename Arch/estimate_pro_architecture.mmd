@@ -1,0 +1,38 @@
+graph TD
+    subgraph User Device
+        A[React Frontend] --> B{Backend API Gateway}
+    end
+
+    subgraph AWS Cloud Infrastructure
+        B --> C{Authentication Service}
+        B --> D["API Server (Node.js/Express)"]
+        
+        D --> E[PostgreSQL Database]
+        D --> F{AI Processing Pipeline}
+        D --> G{QuickBooks API Client}
+
+        subgraph AI Processing Pipeline
+            F --> F1["1. Speech-to-Text API"]
+            F --> F2["2. Scope Generation LLM"]
+            F --> F3["3. Market Research Agent"]
+            F --> F4["4. Line-Item Generation LLM"]
+            F --> F5["5. Feedback Loop (RAG/Fine-Tuning)"]
+        end
+
+        E --> F5
+    end
+
+    subgraph External Services
+        G --> H[QuickBooks API]
+        F1 --> I[Whisper/Google Speech API]
+        F2 --> J[OpenAI/Claude API]
+        F3 --> K[Web Search APIs / Scraping]
+        F4 --> J
+    end
+
+    style A fill:#61DAFB,stroke:#000,stroke-width:2px
+    style H fill:#2CA01C,stroke:#000,stroke-width:2px
+    style I fill:#F68A1E,stroke:#000,stroke-width:2px
+    style J fill:#74AA9C,stroke:#000,stroke-width:2px
+    style K fill:#4285F4,stroke:#000,stroke-width:2px
+
