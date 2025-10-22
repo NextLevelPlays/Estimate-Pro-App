@@ -109,57 +109,31 @@ function ConstructionEstimateApp() {
     setGenerationError('');
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': claudeApiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-1',
-          max_tokens: 1500,
-          messages: [
-            {
-              role: 'user',
-              content: `You are a professional construction estimate scope generator for a handyman service called "${companyInfo.name}". 
+    const response = await fetch('https://estimate-pro-backend-g2ud.onrender.com/api/generate-scope', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rawScope: newEstimate.raw_scope,
+        companyName: companyInfo.name || 'Blackston Handyman Services'
+      })
+    });
 
-Convert the following rough notes into a professional, detailed scope of work that would be sent to a client. 
+    if (!response.ok) {
+      throw new Error('Failed to generate scope');
+    }
 
-Requirements:
-1. Use professional but friendly language
-2. Be specific about what work will be done
-3. Include any materials or labor mentioned
-4. Mention safety considerations if applicable
-5. Include information about cleanup and quality assurance
-6. Format with numbered sections and clear descriptions
-7. Keep it concise but comprehensive
-
-Raw Notes:
-${newEstimate.raw_scope}
-
-Please provide a professional scope of work:`
-            }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to generate scope');
-      }
-
-      const data = await response.json();
-      const generatedScope = data.content[0].text;
-
-      setNewEstimate(prev => ({
-        ...prev,
-        professional_scope: generatedScope
-      }));
-    } catch (error) {
-      console.error('Error calling Claude API:', error);
-      setGenerationError(`Error: ${error.message}. Make sure your API key is valid.`);
-    } finally {
+    const data = await response.json();
+    
+    setNewEstimate(prev => ({
+      ...prev,
+      professional_scope: data.professionalScope
+    }));
+  } catch (error) {
+    console.error('Error calling backend API:', error);
+    setGenerationError('Error: ' + error.message + '. Make sure your backend is running.');
+  } finally {
       setIsGeneratingScope(false);
     }
   };
