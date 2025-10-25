@@ -100,23 +100,18 @@ function ConstructionEstimateApp() {
       return;
     }
 
-    if (!claudeApiKey) {
-      setGenerationError('Please configure your Claude API key in Settings first');
-      return;
-    }
 
     setIsGeneratingScope(true);
     setGenerationError('');
 
     try {
-    const response = await fetch('https://estimate-pro-backend-g2ud.onrender.com/api/generate-scope', {
+    const response = await fetch('/api/generateScope', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         rawScope: newEstimate.raw_scope,
-        companyName: companyInfo.name || 'Blackston Handyman Services'
       })
     });
 
@@ -132,7 +127,7 @@ function ConstructionEstimateApp() {
     }));
   } catch (error) {
     console.error('Error calling backend API:', error);
-    setGenerationError('Error: ' + error.message + '. Make sure your backend is running.');
+    setGenerationError('Error: ' + error.message);
   } finally {
       setIsGeneratingScope(false);
     }
