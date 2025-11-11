@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Home, FileText, Briefcase, Users, Settings as SettingsIcon, HelpCircle, Plus, Search, Filter, Eye, Download, Trash, MoreVertical, Clock, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
-import './App.css';
 
+const EstimatePro = () => {
 const EstimatePro = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [estimates, setEstimates] = useState([
