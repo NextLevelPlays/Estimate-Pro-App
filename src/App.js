@@ -1,563 +1,129 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Building2, Users, FileText, Settings, HelpCircle, LogOut,
-  Plus, Download, Mail, Edit, Trash2, User, MapPin, DollarSign,
-  Upload, Save, Home
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { Home, FileText, Briefcase, Users, Settings as SettingsIcon, HelpCircle, Plus, Search, Filter, Eye, Download, Trash, MoreVertical, Clock, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
+import './App.css';
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+const EstimatePro = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [estimates, setEstimates] = useState([
+    { id: 1, client: 'John Smith', project: 'Kitchen Renovation', amount: 5000, status: 'completed', date: '2025-11-05' },
+    { id: 2, client: 'Sarah Johnson', project: 'Bathroom Remodel', amount: 3500, status: 'pending', date: '2025-11-08' },
+    { id: 3, client: 'Mike Davis', project: 'Deck Installation', amount: 2800, status: 'in-progress', date: '2025-11-10' },
+  ]);
+  
   const [jobs, setJobs] = useState([
-    {
-      id: 1,
-      title: 'Kitchen Remodel Estimate',
-      client_id: 1,
-      client_name: 'John Smith',
-      job_type: 'Kitchen',
-      status: 'estimate_sent',
-      location: '123 Main St',
-      estimate_total: 12744,
-      materials: [],
-      labor: [],
-      notes: ''
-    }
+    { id: 1, name: 'Kitchen Renovation', client: 'John Smith', startDate: '2025-11-01', status: 'in-progress', progress: 65 },
+    { id: 2, name: 'Deck Installation', client: 'Mike Davis', startDate: '2025-11-05', status: 'in-progress', progress: 40 },
   ]);
+  
   const [clients, setClients] = useState([
-    {
-      id: 1,
-      name: 'John Smith',
-      email: 'john@example.com',
-      phone: '(555) 123-4567',
-      company: '',
-      address: '123 Main St'
-    }
+    { id: 1, name: 'John Smith', phone: '(555) 123-4567', email: 'john@email.com', totalSpent: 5000 },
+    { id: 2, name: 'Sarah Johnson', phone: '(555) 234-5678', email: 'sarah@email.com', totalSpent: 3500 },
+    { id: 3, name: 'Mike Davis', phone: '(555) 345-6789', email: 'mike@email.com', totalSpent: 2800 },
   ]);
-  const [userSettings] = useState({
-    company_name: 'Blackston Handyman Services',
-    business_phone: '(303) 880-4557',
-    owner_name: 'Brandon Blackston',
-    default_tax_rate: 0,
-    custom_job_types: ['Kitchen', 'Bathroom', 'Handyman', 'General Repair']
-  });
-  const [showNewEstimateForm, setShowNewEstimateForm] = useState(false);
-  const [showNewClientForm, setShowNewClientForm] = useState(false);
-  const [newClient, setNewClient] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    company: '',
-    address: ''
-  });
-  const [newEstimate, setNewEstimate] = useState({
-    title: '',
-    client_id: '',
-    job_type: '',
-    materials: [],
-    labor: [],
-    notes: ''
-  });
 
-  const addClient = () => {
-    if (newClient.name && newClient.email) {
-      setClients([...clients, {
-        id: Date.now(),
-        ...newClient
-      }]);
-      setNewClient({ name: '', email: '', phone: '', company: '', address: '' });
-      setShowNewClientForm(false);
-    }
-  };
+  const dashboardStats = [
+    { label: 'Total Estimates', value: '12', icon: FileText, color: 'bg-red-600' },
+    { label: 'Active Jobs', value: '3', icon: Briefcase, color: 'bg-red-600' },
+    { label: 'Total Clients', value: '8', icon: Users, color: 'bg-red-600' },
+    { label: 'Est. Value', value: '$45,300', icon: DollarSign, color: 'bg-red-600' },
+  ];
 
-  const saveEstimate = () => {
-    if (newEstimate.title && newEstimate.client_id) {
-      const selectedClient = clients.find(c => c.id === parseInt(newEstimate.client_id));
-      setJobs([...jobs, {
-        id: Date.now(),
-        ...newEstimate,
-        client_id: parseInt(newEstimate.client_id),
-        client_name: selectedClient.name,
-        status: 'pending',
-        location: selectedClient.address,
-        estimate_total: 0
-      }]);
-      setNewEstimate({ title: '', client_id: '', job_type: '', materials: [], labor: [], notes: '' });
-      setShowNewEstimateForm(false);
-    }
-  };
+  const revenueData = [
+    { month: 'Aug', revenue: 12000 },
+    { month: 'Sep', revenue: 19000 },
+    { month: 'Oct', revenue: 15000 },
+    { month: 'Nov', revenue: 18000 },
+  ];
 
-  const generatePDF = (job) => {
-    alert(`PDF generation for "${job.title}" - Integration with backend needed`);
-  };
+  const estimateStatusData = [
+    { name: 'Completed', value: 5, fill: '#16a34a' },
+    { name: 'Pending', value: 4, fill: '#f59e0b' },
+    { name: 'In Progress', value: 3, fill: '#3b82f6' },
+  ];
 
-  const sendEmail = (email, job) => {
-    alert(`Email sent to ${email} with estimate for "${job.title}"`);
-  };
-
-  const Navigation = () => (
-    <nav className="bg-gradient-to-r from-red-700 to-red-800 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="bg-white rounded p-2">
-              <Building2 className="w-6 h-6 text-red-700" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Blackston Handyman Services</h1>
-              <p className="text-red-100 text-sm">Quality Work. Honest Price.</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-semibold">Brandon Blackston</p>
-            <p className="text-red-100">(303) 880-4557</p>
-          </div>
-        </div>
-        <div className="mt-4 flex space-x-1 border-t border-red-600 pt-3">
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className={`px-4 py-2 rounded font-medium transition ${
-              currentPage === 'dashboard'
-                ? 'bg-red-900 text-white'
-                : 'text-red-100 hover:bg-red-700'
-            }`}
-          >
-            <Home className="w-4 h-4 inline mr-2" />
-            Dashboard
-          </button>
-          <button
-            onClick={() => setCurrentPage('estimates')}
-            className={`px-4 py-2 rounded font-medium transition ${
-              currentPage === 'estimates'
-                ? 'bg-red-900 text-white'
-                : 'text-red-100 hover:bg-red-700'
-            }`}
-          >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Estimates
-          </button>
-          <button
-            onClick={() => setCurrentPage('jobs')}
-            className={`px-4 py-2 rounded font-medium transition ${
-              currentPage === 'jobs'
-                ? 'bg-red-900 text-white'
-                : 'text-red-100 hover:bg-red-700'
-            }`}
-          >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Jobs
-          </button>
-          <button
-            onClick={() => setCurrentPage('clients')}
-            className={`px-4 py-2 rounded font-medium transition ${
-              currentPage === 'clients'
-                ? 'bg-red-900 text-white'
-                : 'text-red-100 hover:bg-red-700'
-            }`}
-          >
-            <Users className="w-4 h-4 inline mr-2" />
-            Clients
-          </button>
-          <button
-            onClick={() => setCurrentPage('settings')}
-            className={`px-4 py-2 rounded font-medium transition ${
-              currentPage === 'settings'
-                ? 'bg-red-900 text-white'
-                : 'text-red-100 hover:bg-red-700'
-            }`}
-          >
-            <Settings className="w-4 h-4 inline mr-2" />
-            Settings
-          </button>
-          <button
-            onClick={() => setCurrentPage('guide')}
-            className={`px-4 py-2 rounded font-medium transition ${
-              currentPage === 'guide'
-                ? 'bg-red-900 text-white'
-                : 'text-red-100 hover:bg-red-700'
-            }`}
-          >
-            <HelpCircle className="w-4 h-4 inline mr-2" />
-            Guide
-          </button>
-        </div>
-      </div>
-    </nav>
-  );
-
-  const Dashboard = () => (
+  const renderDashboard = () => (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-      
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-l-red-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Estimates</p>
-              <p className="text-3xl font-bold text-gray-900">{jobs.length}</p>
+        {dashboardStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="bg-white rounded-lg shadow p-6 border-l-4 border-red-600">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm">{stat.label}</p>
+                  <p className="text-3xl font-bold text-gray-800 mt-2">{stat.value}</p>
+                </div>
+                <Icon className="text-red-600" size={40} />
+              </div>
             </div>
-            <FileText className="w-8 h-8 text-red-200" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-l-green-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Approved Estimates</p>
-              <p className="text-3xl font-bold text-gray-900">{jobs.filter(j => j.status === 'approved').length}</p>
-            </div>
-            <FileText className="w-8 h-8 text-green-200" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-l-blue-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Active Jobs</p>
-              <p className="text-3xl font-bold text-gray-900">{jobs.filter(j => j.status === 'in_progress').length}</p>
-            </div>
-            <FileText className="w-8 h-8 text-blue-200" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-l-purple-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Clients</p>
-              <p className="text-3xl font-bold text-gray-900">{clients.length}</p>
-            </div>
-            <Users className="w-8 h-8 text-purple-200" />
-          </div>
-        </div>
+          );
+        })}
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Estimates</h2>
-          <div className="space-y-3">
-            {jobs.slice(-3).reverse().map(job => (
-              <div key={job.id} className="border-b pb-3 last:border-b-0">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold text-gray-900">{job.title}</p>
-                    <p className="text-sm text-gray-500">{job.client_name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-red-600">${job.estimate_total.toLocaleString()}</p>
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                      {job.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Revenue</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="revenue" stroke="#dc2626" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
+        {/* Estimate Status */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Active Jobs</h2>
-          <div className="space-y-3">
-            {jobs.filter(j => j.status === 'in_progress').slice(0, 3).map(job => (
-              <div key={job.id} className="border-b pb-3 last:border-b-0">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold text-gray-900">{job.title}</p>
-                    <p className="text-sm text-gray-500">{job.client_name}</p>
-                  </div>
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    in progress
-                  </span>
-                </div>
-              </div>
-            ))}
-            {jobs.filter(j => j.status === 'in_progress').length === 0 && (
-              <p className="text-gray-500 text-sm">No active jobs</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const Estimates = () => {
-    if (showNewEstimateForm) {
-      return (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">New Estimate</h1>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-                <input
-                  type="text"
-                  value={newEstimate.title}
-                  onChange={(e) => setNewEstimate({...newEstimate, title: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="e.g., Kitchen Remodel"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
-                <select
-                  value={newEstimate.client_id}
-                  onChange={(e) => setNewEstimate({...newEstimate, client_id: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">Select a client</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>{client.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                <select
-                  value={newEstimate.job_type}
-                  onChange={(e) => setNewEstimate({...newEstimate, job_type: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">Select service type</option>
-                  {userSettings.custom_job_types.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  value={newEstimate.notes}
-                  onChange={(e) => setNewEstimate({...newEstimate, notes: e.target.value})}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  rows="4"
-                  placeholder="Job details and notes..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-4 mt-6">
-              <button
-                onClick={() => setShowNewEstimateForm(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveEstimate}
-                className="px-6 py-2 bg-red-800 hover:bg-red-900 text-white rounded-lg flex items-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save Estimate</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Estimates</h1>
-          <button
-            onClick={() => setShowNewEstimateForm(true)}
-            className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Estimate</span>
-          </button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-6 border-b bg-gradient-to-r from-red-50 to-red-100">
-            <h2 className="text-lg font-semibold text-gray-900">All Estimates</h2>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left py-3 px-6 font-medium text-gray-700">Job Title</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-700">Client</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-700">Type</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-700">Status</th>
-                  <th className="text-right py-3 px-6 font-medium text-gray-700">Value</th>
-                  <th className="text-center py-3 px-6 font-medium text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job) => (
-                  <tr key={job.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-6 font-medium">{job.title}</td>
-                    <td className="py-3 px-6">{job.client_name}</td>
-                    <td className="py-3 px-6">{job.job_type}</td>
-                    <td className="py-3 px-6">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        job.status === 'estimate_sent' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {job.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3 px-6 text-right font-semibold">${job.estimate_total.toLocaleString()}</td>
-                    <td className="py-3 px-6">
-                      <div className="flex justify-center space-x-2">
-                        <button
-                          onClick={() => generatePDF(job)}
-                          className="text-red-800 hover:text-red-900"
-                          title="Generate PDF"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => sendEmail(clients.find(c => c.id === job.client_id)?.email, job)}
-                          className="text-green-600 hover:text-green-800"
-                          title="Send Email"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Estimate Status</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={estimateStatusData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={80} fill="#8884d8" dataKey="value">
+                {estimateStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
-    );
-  };
 
-  const Jobs = () => (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {jobs.map((job) => (
-          <div key={job.id} className="bg-white rounded-lg shadow-sm border border-l-4 border-l-red-800 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                job.status === 'estimate_sent' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {job.status.replace('_', ' ')}
-              </span>
-            </div>
-            
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-gray-400" />
-                <span>{job.client_name}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span>{job.location}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <DollarSign className="w-4 h-4 text-gray-400" />
-                <span className="font-semibold text-red-800">${job.estimate_total.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const Clients = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-        <button
-          onClick={() => setShowNewClientForm(true)}
-          className="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Client</span>
-        </button>
-      </div>
-
-      {showNewClientForm && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Client</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={newClient.name}
-              onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
-              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-            <input
-              type="email"
-              placeholder="Email Address"
-              value={newClient.email}
-              onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
-              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              value={newClient.phone}
-              onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
-              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-            <input
-              type="text"
-              placeholder="Company (optional)"
-              value={newClient.company}
-              onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
-              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-            <input
-              type="text"
-              placeholder="Address"
-              value={newClient.address}
-              onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
-              className="md:col-span-2 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <div className="flex justify-end space-x-4 mt-4">
-            <button
-              onClick={() => setShowNewClientForm(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={addClient}
-              className="px-4 py-2 bg-red-800 hover:bg-red-900 text-white rounded-lg"
-            >
-              Add Client
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b bg-gradient-to-r from-red-50 to-red-100">
-          <h2 className="text-lg font-semibold text-gray-900">Client Directory</h2>
-        </div>
-        
+      {/* Recent Estimates */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Estimates</h3>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left py-3 px-6 font-medium text-gray-700">Name</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-700">Email</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-700">Phone</th>
-                <th className="text-left py-3 px-6 font-medium text-gray-700">Company</th>
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-gray-700 font-semibold">Client</th>
+                <th className="text-left py-3 px-4 text-gray-700 font-semibold">Project</th>
+                <th className="text-left py-3 px-4 text-gray-700 font-semibold">Amount</th>
+                <th className="text-left py-3 px-4 text-gray-700 font-semibold">Status</th>
+                <th className="text-left py-3 px-4 text-gray-700 font-semibold">Date</th>
               </tr>
             </thead>
             <tbody>
-              {clients.map((client) => (
-                <tr key={client.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-6 font-medium">{client.name}</td>
-                  <td className="py-3 px-6">{client.email}</td>
-                  <td className="py-3 px-6">{client.phone}</td>
-                  <td className="py-3 px-6">{client.company}</td>
+              {estimates.map((est) => (
+                <tr key={est.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-3 px-4 text-gray-800">{est.client}</td>
+                  <td className="py-3 px-4 text-gray-800">{est.project}</td>
+                  <td className="py-3 px-4 text-gray-800 font-semibold">${est.amount.toLocaleString()}</td>
+                  <td className="py-3 px-4">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      est.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      est.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {est.status.charAt(0).toUpperCase() + est.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-gray-600">{est.date}</td>
                 </tr>
               ))}
             </tbody>
@@ -567,74 +133,248 @@ export default function App() {
     </div>
   );
 
-  const Settings = () => (
+  const renderEstimates = () => (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-      <div className="bg-white rounded-lg shadow-sm border p-6 border-l-4 border-l-red-800">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Company Information</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-            <input type="text" value={userSettings.company_name} className="w-full border rounded-lg px-3 py-2 bg-gray-50" readOnly />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input type="text" value={userSettings.business_phone} className="w-full border rounded-lg px-3 py-2 bg-gray-50" readOnly />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
-            <input type="text" value={userSettings.owner_name} className="w-full border rounded-lg px-3 py-2 bg-gray-50" readOnly />
-          </div>
-        </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Estimates</h2>
+        <button className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+          <Plus size={20} /> New Estimate
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Client</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Project</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Amount</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Status</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {estimates.map((est) => (
+              <tr key={est.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-6 text-gray-800">{est.client}</td>
+                <td className="py-4 px-6 text-gray-800">{est.project}</td>
+                <td className="py-4 px-6 text-gray-800 font-semibold">${est.amount.toLocaleString()}</td>
+                <td className="py-4 px-6">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    est.status === 'completed' ? 'bg-green-100 text-green-700' :
+                    est.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    {est.status.charAt(0).toUpperCase() + est.status.slice(1)}
+                  </span>
+                </td>
+                <td className="py-4 px-6 flex gap-3">
+                  <Eye size={18} className="text-blue-600 cursor-pointer hover:text-blue-800" />
+                  <Download size={18} className="text-green-600 cursor-pointer hover:text-green-800" />
+                  <Trash size={18} className="text-red-600 cursor-pointer hover:text-red-800" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 
-  const Guide = () => (
+  const renderJobs = () => (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">User Guide</h1>
-      <div className="bg-white rounded-lg shadow-sm border p-6 border-l-4 border-l-red-800">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Welcome to Blackston EstimatePro</h2>
-        <div className="space-y-4">
-          <h3 className="font-semibold">Quick Start:</h3>
-          <ol className="list-decimal list-inside space-y-2 text-gray-700">
-            <li>Click "New Estimate" to create professional estimates</li>
-            <li>Add your clients in the Clients section</li>
-            <li>Generate PDFs with your Blackston branding</li>
-            <li>Send estimates directly to clients via email</li>
-          </ol>
-          <div className="mt-6 bg-red-50 p-4 rounded border-l-4 border-red-800">
-            <h4 className="font-semibold text-red-800">System Features:</h4>
-            <ul className="text-sm text-red-700 mt-2">
-              <li>• Professional estimate generation</li>
-              <li>• Client management system</li>
-              <li>• Job tracking and status updates</li>
-              <li>• Email integration for client communication</li>
-            </ul>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Jobs</h2>
+        <button className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+          <Plus size={20} /> New Job
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {jobs.map((job) => (
+          <div key={job.id} className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-800">{job.name}</h3>
+            <p className="text-gray-600 text-sm mt-2">{job.client}</p>
+            <p className="text-gray-500 text-sm mt-1">Started: {job.startDate}</p>
+            <div className="mt-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Progress</span>
+                <span className="text-sm font-bold text-red-600">{job.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-red-600 h-2 rounded-full" style={{ width: `${job.progress}%` }}></div>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-between">
+              <span className={`px-3 py-1 rounded text-sm font-medium ${
+                job.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+              }`}>
+                {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+              </span>
+              <MoreVertical size={18} className="text-gray-400 cursor-pointer" />
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 
-  const renderCurrentPage = () => {
-    switch (currentPage) {
-      case 'dashboard': return <Dashboard />;
-      case 'estimates': return <Estimates />;
-      case 'jobs': return <Jobs />;
-      case 'clients': return <Clients />;
-      case 'settings': return <Settings />;
-      case 'guide': return <Guide />;
-      default: return <Dashboard />;
-    }
-  };
+  const renderClients = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Clients</h2>
+        <button className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+          <Plus size={20} /> Add Client
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Name</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Phone</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Email</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Total Spent</th>
+              <th className="text-left py-4 px-6 text-gray-700 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clients.map((client) => (
+              <tr key={client.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-6 text-gray-800 font-medium">{client.name}</td>
+                <td className="py-4 px-6 text-gray-600">{client.phone}</td>
+                <td className="py-4 px-6 text-gray-600">{client.email}</td>
+                <td className="py-4 px-6 text-gray-800 font-semibold">${client.totalSpent.toLocaleString()}</td>
+                <td className="py-4 px-6 flex gap-3">
+                  <Eye size={18} className="text-blue-600 cursor-pointer hover:text-blue-800" />
+                  <Trash size={18} className="text-red-600 cursor-pointer hover:text-red-800" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">Settings</h2>
+      
+      <div className="bg-white rounded-lg shadow p-6 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Company Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+              <input type="text" placeholder="Blackston Handyman Services" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+              <input type="text" placeholder="(555) 123-4567" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Branding</h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
+            <div className="flex gap-3">
+              <div className="w-12 h-12 bg-red-600 rounded cursor-pointer border-2 border-red-800"></div>
+              <div className="w-12 h-12 bg-blue-600 rounded cursor-pointer border-2 border-gray-300"></div>
+              <div className="w-12 h-12 bg-green-600 rounded cursor-pointer border-2 border-gray-300"></div>
+            </div>
+          </div>
+        </div>
+
+        <button className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">Save Changes</button>
+      </div>
+    </div>
+  );
+
+  const renderGuide = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">User Guide</h2>
+      
+      <div className="space-y-4">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Getting Started</h3>
+          <p className="text-gray-600">Welcome to EstimatePro! This guide will help you navigate the application and manage your estimates effectively.</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Creating Estimates</h3>
+          <p className="text-gray-600">Click the "New Estimate" button to create professional estimates for your clients. Fill in project details, scope of work, and pricing.</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Managing Jobs</h3>
+          <p className="text-gray-600">Track active jobs and monitor progress. Update job status and completion percentage as work progresses.</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Client Management</h3>
+          <p className="text-gray-600">Store client information, contact details, and track total spending for better relationship management.</p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {renderCurrentPage()}
-      </main>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-red-600 text-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold">EstimatePro</h1>
+          <p className="text-red-100">Blackston Handyman Services</p>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Sidebar Navigation */}
+        <nav className="w-64 bg-white shadow-lg">
+          <div className="p-6 space-y-2">
+            {[
+              { id: 'dashboard', icon: Home, label: 'Dashboard' },
+              { id: 'estimates', icon: FileText, label: 'Estimates' },
+              { id: 'jobs', icon: Briefcase, label: 'Jobs' },
+              { id: 'clients', icon: Users, label: 'Clients' },
+              { id: 'settings', icon: SettingsIcon, label: 'Settings' },
+              { id: 'guide', icon: HelpCircle, label: 'Guide' },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-red-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span className="font-medium">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="flex-1 p-8">
+          {activeTab === 'dashboard' && renderDashboard()}
+          {activeTab === 'estimates' && renderEstimates()}
+          {activeTab === 'jobs' && renderJobs()}
+          {activeTab === 'clients' && renderClients()}
+          {activeTab === 'settings' && renderSettings()}
+          {activeTab === 'guide' && renderGuide()}
+        </main>
+      </div>
     </div>
   );
-}
+};
+
+export default EstimatePro;
