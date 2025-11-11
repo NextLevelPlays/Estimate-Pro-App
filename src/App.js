@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Home, FileText, Briefcase, Users, Settings as SettingsIcon, HelpCircle, Plus, Search, Filter, Eye, Download, Trash, MoreVertical, Clock, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { Home, FileText, Briefcase, Users, Settings as SettingsIcon, HelpCircle, Plus, Eye, Download, Trash, MoreVertical, DollarSign } from 'lucide-react';
 
 const EstimatePro = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [estimates, setEstimates] = useState([
+  const [estimates] = useState([
     { id: 1, client: 'John Smith', project: 'Kitchen Renovation', amount: 5000, status: 'completed', date: '2025-11-05' },
     { id: 2, client: 'Sarah Johnson', project: 'Bathroom Remodel', amount: 3500, status: 'pending', date: '2025-11-08' },
     { id: 3, client: 'Mike Davis', project: 'Deck Installation', amount: 2800, status: 'in-progress', date: '2025-11-10' },
   ]);
   
-  const [jobs, setJobs] = useState([
+  const [jobs] = useState([
     { id: 1, name: 'Kitchen Renovation', client: 'John Smith', startDate: '2025-11-01', status: 'in-progress', progress: 65 },
     { id: 2, name: 'Deck Installation', client: 'Mike Davis', startDate: '2025-11-05', status: 'in-progress', progress: 40 },
   ]);
   
-  const [clients, setClients] = useState([
+  const [clients] = useState([
     { id: 1, name: 'John Smith', phone: '(555) 123-4567', email: 'john@email.com', totalSpent: 5000 },
     { id: 2, name: 'Sarah Johnson', phone: '(555) 234-5678', email: 'sarah@email.com', totalSpent: 3500 },
     { id: 3, name: 'Mike Davis', phone: '(555) 345-6789', email: 'mike@email.com', totalSpent: 2800 },
@@ -94,7 +94,6 @@ const EstimatePro = () => {
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {dashboardStats.map((stat, index) => {
           const Icon = stat.icon;
@@ -112,9 +111,7 @@ const EstimatePro = () => {
         })}
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Revenue</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -128,7 +125,6 @@ const EstimatePro = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Estimate Status */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Estimate Status</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -144,7 +140,6 @@ const EstimatePro = () => {
         </div>
       </div>
 
-      {/* Recent Estimates */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Estimates</h3>
         <div className="overflow-x-auto">
@@ -422,7 +417,6 @@ const EstimatePro = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
       <header className="bg-red-600 text-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold">EstimatePro</h1>
@@ -431,7 +425,6 @@ const EstimatePro = () => {
       </header>
 
       <div className="flex">
-        {/* Sidebar Navigation */}
         <nav className="w-64 bg-white shadow-lg">
           <div className="p-6 space-y-2">
             {[
@@ -461,7 +454,6 @@ const EstimatePro = () => {
           </div>
         </nav>
 
-        {/* Main Content */}
         <main className="flex-1 p-8">
           {activeTab === 'dashboard' && renderDashboard()}
           {activeTab === 'estimates' && renderEstimates()}
