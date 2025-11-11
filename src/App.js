@@ -3,7 +3,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Home, FileText, Briefcase, Users, Settings as SettingsIcon, HelpCircle, Plus, Search, Filter, Eye, Download, Trash, MoreVertical, Clock, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
 
 const EstimatePro = () => {
-const EstimatePro = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [estimates, setEstimates] = useState([
     { id: 1, client: 'John Smith', project: 'Kitchen Renovation', amount: 5000, status: 'completed', date: '2025-11-05' },
@@ -21,6 +20,16 @@ const EstimatePro = () => {
     { id: 2, name: 'Sarah Johnson', phone: '(555) 234-5678', email: 'sarah@email.com', totalSpent: 3500 },
     { id: 3, name: 'Mike Davis', phone: '(555) 345-6789', email: 'mike@email.com', totalSpent: 2800 },
   ]);
+
+  const [newEstimateData, setNewEstimateData] = useState({
+    client: '',
+    title: '',
+    rawScope: '',
+    professionalScope: '',
+    generatingScope: false,
+  });
+
+  const [showNewEstimateModal, setShowNewEstimateModal] = useState(false);
 
   const dashboardStats = [
     { label: 'Total Estimates', value: '12', icon: FileText, color: 'bg-red-600' },
@@ -41,6 +50,47 @@ const EstimatePro = () => {
     { name: 'Pending', value: 4, fill: '#f59e0b' },
     { name: 'In Progress', value: 3, fill: '#3b82f6' },
   ];
+
+  const generateProfessionalScope = async () => {
+    if (!newEstimateData.rawScope.trim()) {
+      alert('Please enter raw scope notes');
+      return;
+    }
+
+    setNewEstimateData(prev => ({ ...prev, generatingScope: true }));
+
+    try {
+      const response = await fetch('https://estimate-pro-backend-g2ud.onrender.com/api/generateScope', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rawScope: newEstimateData.rawScope,
+          clientName: newEstimateData.client,
+          projectTitle: newEstimateData.title,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setNewEstimateData(prev => ({
+        ...prev,
+        professionalScope: data.scope || 'Unable to generate scope',
+        generatingScope: false,
+      }));
+    } catch (error) {
+      console.error('Error generating scope:', error);
+      setNewEstimateData(prev => ({
+        ...prev,
+        professionalScope: `Error: ${error.message}`,
+        generatingScope: false,
+      }));
+    }
+  };
 
   const renderDashboard = () => (
     <div className="space-y-6">
@@ -137,10 +187,58 @@ const EstimatePro = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Estimates</h2>
-        <button className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+        <button onClick={() => setShowNewEstimateModal(true)} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
           <Plus size={20} /> New Estimate
         </button>
       </div>
+
+      {showNewEstimateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-96 overflow-y-auto">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">New Estimate</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
+                <select value={newEstimateData.client} onChange={(e) => setNewEstimateData(prev => ({ ...prev, client: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <option value="">Select client</option>
+                  {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input type="text" value={newEstimateData.title} onChange={(e) => setNewEstimateData(prev => ({ ...prev, title: e.target.value }))} placeholder="Project title" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Raw Scope of Work (Your Notes)</label>
+                <textarea value={newEstimateData.rawScope} onChange={(e) => setNewEstimateData(prev => ({ ...prev, rawScope: e.target.value }))} placeholder="Describe the project details, materials, measurements, etc." className="w-full px-3 py-2 border border-gray-300 rounded-lg h-32" />
+              </div>
+
+              <button 
+                onClick={generateProfessionalScope} 
+                disabled={newEstimateData.generatingScope}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg"
+              >
+                {newEstimateData.generatingScope ? '⏳ Generating...' : '🤖 Generate Professional Scope with AI Learning'}
+              </button>
+
+              {newEstimateData.professionalScope && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Professional Scope of Work</label>
+                  <textarea value={newEstimateData.professionalScope} readOnly className="w-full px-3 py-2 border border-gray-300 rounded-lg h-32 bg-gray-50" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button onClick={() => setShowNewEstimateModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">Cancel</button>
+              <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save Estimate</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="w-full">
