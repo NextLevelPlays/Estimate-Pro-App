@@ -1,540 +1,305 @@
-import React, { useState, useEffect } from 'react';
-
-
-const App = () => {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const [estimates, setEstimates] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [newEstimate, setNewEstimate] = useState({
-    clientName: '',
-    jobDescription: '',
-    scopeOfWork: '',
-    estimatedCost: '',
-    notes: ''
-  });
-  const [selectedEstimate, setSelectedEstimate] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const savedEstimates = localStorage.getItem('estimates');
-    const savedClients = localStorage.getItem('clients');
-    
-    if (savedEstimates) setEstimates(JSON.parse(savedEstimates));
-    if (savedClients) setClients(JSON.parse(savedClients));
-  }, []);
-
-  // Save estimates to localStorage
-  useEffect(() => {
-    localStorage.setItem('estimates', JSON.stringify(estimates));
-  }, [estimates]);
-
-  // Save clients to localStorage
-  useEffect(() => {
-    localStorage.setItem('clients', JSON.stringify(clients));
-  }, [clients]);
-
-  const handleGenerateScope = async () => {
-    if (!newEstimate.notes.trim()) {
-      alert('Please enter notes before generating scope');
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const response = await fetch('https://estimate-pro-backend-g2ud.onrender.com/api/generate-scope', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          notes: newEstimate.notes,
-          jobDescription: newEstimate.jobDescription
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setNewEstimate({
-        ...newEstimate,
-        scopeOfWork: data.scopeOfWork || data.scope || ''
-      });
-    } catch (error) {
-      console.error('Error generating scope:', error);
-      alert('Error generating scope. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCreateEstimate = () => {
-    if (!newEstimate.clientName.trim() || !newEstimate.jobDescription.trim()) {
-      alert('Please fill in client name and job description');
-      return;
-    }
-
-    const estimate = {
-      id: Date.now(),
-      ...newEstimate,
-      createdDate: new Date().toLocaleDateString(),
-      status: 'pending'
-    };
-
-    setEstimates([...estimates, estimate]);
-    
-    // Add client if new
-    if (!clients.some(c => c.name === newEstimate.clientName)) {
-      setClients([...clients, { id: Date.now(), name: newEstimate.clientName }]);
-    }
-
-    setNewEstimate({
-      clientName: '',
-      jobDescription: '',
-      scopeOfWork: '',
-      estimatedCost: '',
-      notes: ''
-    });
-
-    alert('Estimate created successfully!');
-  };
-
-  const handleDeleteEstimate = (id) => {
-    if (window.confirm('Are you sure you want to delete this estimate?')) {
-      setEstimates(estimates.filter(est => est.id !== id));
-    }
-  };
-
-  const completedJobs = estimates.filter(est => est.status === 'completed').length;
-  const totalEstimates = estimates.length;
-  const totalRevenue = estimates.reduce((sum, est) => sum + (parseFloat(est.estimatedCost) || 0), 0);
-
-  // Dashboard Page
-  const renderDashboard = () => (
-    <div style={styles.dashboard}>
-      <h1 style={styles.pageTitle}>Dashboard</h1>
-      <div style={styles.statsContainer}>
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>{totalEstimates}</div>
-          <div style={styles.statLabel}>Total Estimates</div>
-        </div>
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>{completedJobs}</div>
-          <div style={styles.statLabel}>Completed Jobs</div>
-        </div>
-        <div style={styles.statCard}>
-          <div style={styles.statNumber}>${totalRevenue.toFixed(2)}</div>
-          <div style={styles.statLabel}>Total Revenue</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Estimates Page
-  const renderEstimates = () => (
-    <div style={styles.estimatesPage}>
-      <h1 style={styles.pageTitle}>Estimates</h1>
-      
-      <div style={styles.formContainer}>
-        <h2 style={styles.formTitle}>New Estimate</h2>
-        
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Client Name:</label>
-          <input
-            type="text"
-            value={newEstimate.clientName}
-            onChange={(e) => setNewEstimate({...newEstimate, clientName: e.target.value})}
-            style={styles.input}
-            placeholder="Enter client name"
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Job Description:</label>
-          <input
-            type="text"
-            value={newEstimate.jobDescription}
-            onChange={(e) => setNewEstimate({...newEstimate, jobDescription: e.target.value})}
-            style={styles.input}
-            placeholder="Enter job description"
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Notes (for AI scope generation):</label>
-          <textarea
-            value={newEstimate.notes}
-            onChange={(e) => setNewEstimate({...newEstimate, notes: e.target.value})}
-            style={{...styles.input, minHeight: '100px', resize: 'vertical'}}
-            placeholder="Enter detailed notes about the job..."
-          />
-        </div>
-
-        <button 
-          onClick={handleGenerateScope}
-          disabled={isGenerating}
-          style={{...styles.button, ...styles.aiButton, opacity: isGenerating ? 0.6 : 1}}
-        >
-          {isGenerating ? 'Generating Scope...' : 'Generate Professional Scope with AI Learning'}
-        </button>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Scope of Work:</label>
-          <textarea
-            value={newEstimate.scopeOfWork}
-            onChange={(e) => setNewEstimate({...newEstimate, scopeOfWork: e.target.value})}
-            style={{...styles.input, minHeight: '120px', resize: 'vertical'}}
-            placeholder="Scope of work (auto-generated or manually entered)"
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Estimated Cost:</label>
-          <input
-            type="number"
-            value={newEstimate.estimatedCost}
-            onChange={(e) => setNewEstimate({...newEstimate, estimatedCost: e.target.value})}
-            style={styles.input}
-            placeholder="Enter estimated cost"
-          />
-        </div>
-
-        <button 
-          onClick={handleCreateEstimate}
-          style={{...styles.button, ...styles.createButton}}
-        >
-          Create Estimate
-        </button>
-      </div>
-
-      <div style={styles.estimatesList}>
-        <h2 style={styles.sectionTitle}>Your Estimates</h2>
-        {estimates.length === 0 ? (
-          <p style={styles.emptyMessage}>No estimates yet. Create your first estimate above.</p>
-        ) : (
-          <div>
-            {estimates.map(estimate => (
-              <div key={estimate.id} style={styles.estimateCard}>
-                <div style={styles.estimateHeader}>
-                  <h3 style={styles.estimateTitle}>{estimate.clientName} - {estimate.jobDescription}</h3>
-                  <span style={{...styles.statusBadge, backgroundColor: estimate.status === 'completed' ? '#4CAF50' : '#FF9800'}}>
-                    {estimate.status}
-                  </span>
-                </div>
-                <p><strong>Created:</strong> {estimate.createdDate}</p>
-                <p><strong>Estimated Cost:</strong> ${parseFloat(estimate.estimatedCost || 0).toFixed(2)}</p>
-                <p><strong>Scope:</strong> {estimate.scopeOfWork}</p>
-                <div style={styles.cardActions}>
-                  <button 
-                    onClick={() => setSelectedEstimate(estimate)}
-                    style={{...styles.button, ...styles.viewButton}}
-                  >
-                    View
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteEstimate(estimate.id)}
-                    style={{...styles.button, ...styles.deleteButton}}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Clients Page
-  const renderClients = () => (
-    <div style={styles.clientsPage}>
-      <h1 style={styles.pageTitle}>Clients</h1>
-      <div style={styles.clientsList}>
-        {clients.length === 0 ? (
-          <p style={styles.emptyMessage}>No clients yet. Create an estimate to add a client.</p>
-        ) : (
-          clients.map(client => (
-            <div key={client.id} style={styles.clientCard}>
-              <h3>{client.name}</h3>
-              <p>Estimates: {estimates.filter(e => e.clientName === client.name).length}</p>
+              <button
+                onClick={saveEstimate}
+                className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center space-x-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Estimate</span>
+              </button>
             </div>
-          ))
-        )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Estimates</h1>
+          <button
+            onClick={() => setShowNewEstimateForm(true)}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Estimate</span>
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-6 border-b bg-gradient-to-r from-gray-50 to-orange-50">
+            <h2 className="text-lg font-semibold text-gray-900">All Estimates</h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Job Title</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Client</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Type</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Status</th>
+                  <th className="text-right py-3 px-6 font-medium text-gray-700">Value</th>
+                  <th className="text-center py-3 px-6 font-medium text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map((job) => (
+                  <tr key={job.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-6 font-medium">{job.title}</td>
+                    <td className="py-3 px-6">{job.client_name}</td>
+                    <td className="py-3 px-6">{job.job_type}</td>
+                    <td className="py-3 px-6">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        job.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        job.status === 'estimate_sent' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {job.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 px-6 text-right font-semibold">${job.estimate_total.toLocaleString()}</td>
+                    <td className="py-3 px-6">
+                      <div className="flex justify-center space-x-2">
+                        <button
+                          onClick={() => generatePDF(job)}
+                          className="text-orange-600 hover:text-orange-800"
+                          title="Generate PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            const client = clients.find(c => c.id === job.client_id);
+                            if (client) sendEmail(client.email, job);
+                          }}
+                          className="text-green-600 hover:text-green-800"
+                          title="Send Email"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const Jobs = () => (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {jobs.map((job) => (
+          <div key={job.id} className="bg-white rounded-lg shadow-sm border border-l-4 border-l-orange-600 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                job.status === 'completed' ? 'bg-green-100 text-green-800' :
+                job.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                job.status === 'estimate_sent' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {job.status.replace('_', ' ')}
+              </span>
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4 text-gray-400" />
+                <span>{job.client_name}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                <span>{job.location}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <DollarSign className="w-4 h-4 text-gray-400" />
+                <span className="font-semibold text-orange-600">${job.estimate_total.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 
-  // Main render
-  return (
-    <div style={styles.appContainer}>
-      <nav style={styles.navbar}>
-        <h1 style={styles.navTitle}>EstimatePro</h1>
-        <div style={styles.navButtons}>
-          <button 
-            onClick={() => setCurrentPage('dashboard')}
-            style={{...styles.navButton, backgroundColor: currentPage === 'dashboard' ? '#8B6F47' : 'transparent'}}
-          >
-            Dashboard
-          </button>
-          <button 
-            onClick={() => setCurrentPage('estimates')}
-            style={{...styles.navButton, backgroundColor: currentPage === 'estimates' ? '#8B6F47' : 'transparent'}}
-          >
-            Estimates
-          </button>
-          <button 
-            onClick={() => setCurrentPage('clients')}
-            style={{...styles.navButton, backgroundColor: currentPage === 'clients' ? '#8B6F47' : 'transparent'}}
-          >
-            Clients
-          </button>
-        </div>
-      </nav>
-
-      <div style={styles.mainContent}>
-        {currentPage === 'dashboard' && renderDashboard()}
-        {currentPage === 'estimates' && renderEstimates()}
-        {currentPage === 'clients' && renderClients()}
+  const Clients = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+        <button
+          onClick={() => setShowNewClientForm(true)}
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Client</span>
+        </button>
       </div>
 
-      {selectedEstimate && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <button 
-              onClick={() => setSelectedEstimate(null)}
-              style={styles.closeButton}
+      {showNewClientForm && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Client</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={newClient.name}
+              onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
+              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={newClient.email}
+              onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <input
+              type="tel"
+              placeholder="Phone Number"
+              value={newClient.phone}
+              onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
+              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <input
+              type="text"
+              placeholder="Company (optional)"
+              value={newClient.company}
+              onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
+              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <input
+              type="text"
+              placeholder="Address"
+              value={newClient.address}
+              onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
+              className="md:col-span-2 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          <div className="flex justify-end space-x-4 mt-4">
+            <button
+              onClick={() => setShowNewClientForm(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
-              ✕
+              Cancel
             </button>
-            <h2>{selectedEstimate.clientName}</h2>
-            <p><strong>Job:</strong> {selectedEstimate.jobDescription}</p>
-            <p><strong>Scope:</strong> {selectedEstimate.scopeOfWork}</p>
-            <p><strong>Cost:</strong> ${parseFloat(selectedEstimate.estimatedCost || 0).toFixed(2)}</p>
-            <p><strong>Notes:</strong> {selectedEstimate.notes}</p>
-            <p><strong>Status:</strong> {selectedEstimate.status}</p>
+            <button
+              onClick={addClient}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg"
+            >
+              Add Client
+            </button>
           </div>
         </div>
       )}
+
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-6 border-b bg-gradient-to-r from-gray-50 to-orange-50">
+          <h2 className="text-lg font-semibold text-gray-900">Client Directory</h2>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="text-left py-3 px-6 font-medium text-gray-700">Name</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-700">Email</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-700">Phone</th>
+                <th className="text-left py-3 px-6 font-medium text-gray-700">Company</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((client) => (
+                <tr key={client.id} className="border-b hover:bg-gray-50">
+                  <td className="py-3 px-6 font-medium">{client.name}</td>
+                  <td className="py-3 px-6">{client.email}</td>
+                  <td className="py-3 px-6">{client.phone}</td>
+                  <td className="py-3 px-6">{client.company}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
-};
 
-const styles = {
-  appContainer: {
-    fontFamily: 'Arial, sans-serif',
-    backgroundColor: '#f5f5f5',
-    minHeight: '100vh',
-  },
-  navbar: {
-    backgroundColor: '#8B6F47',
-    color: 'white',
-    padding: '15px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  navTitle: {
-    margin: 0,
-    fontSize: '24px',
-    fontWeight: 'bold',
-  },
-  navButtons: {
-    display: 'flex',
-    gap: '10px',
-  },
-  navButton: {
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '4px',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'background-color 0.3s',
-  },
-  mainContent: {
-    padding: '30px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-  },
-  dashboard: {
-    padding: '20px',
-  },
-  statsContainer: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-    marginTop: '20px',
-  },
-  statCard: {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    textAlign: 'center',
-  },
-  statNumber: {
-    fontSize: '36px',
-    fontWeight: 'bold',
-    color: '#8B6F47',
-  },
-  statLabel: {
-    fontSize: '14px',
-    color: '#666',
-    marginTop: '10px',
-  },
-  pageTitle: {
-    color: '#333',
-    marginBottom: '20px',
-  },
-  formContainer: {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '8px',
-    marginBottom: '30px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  formTitle: {
-    color: '#333',
-    marginBottom: '15px',
-  },
-  formGroup: {
-    marginBottom: '15px',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '5px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-  },
-  button: {
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    transition: 'background-color 0.3s',
-  },
-  aiButton: {
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    width: '100%',
-    marginBottom: '15px',
-  },
-  createButton: {
-    backgroundColor: '#8B6F47',
-    color: 'white',
-    width: '100%',
-  },
-  estimatesList: {
-    marginTop: '30px',
-  },
-  sectionTitle: {
-    color: '#333',
-    marginBottom: '15px',
-  },
-  estimateCard: {
-    backgroundColor: 'white',
-    padding: '15px',
-    marginBottom: '15px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    borderLeft: '4px solid #8B6F47',
-  },
-  estimateHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '10px',
-  },
-  estimateTitle: {
-    margin: 0,
-    color: '#333',
-  },
-  statusBadge: {
-    padding: '5px 10px',
-    borderRadius: '20px',
-    color: 'white',
-    fontSize: '12px',
-  },
-  cardActions: {
-    display: 'flex',
-    gap: '10px',
-    marginTop: '10px',
-  },
-  viewButton: {
-    backgroundColor: '#2196F3',
-    color: 'white',
-  },
-  deleteButton: {
-    backgroundColor: '#f44336',
-    color: 'white',
-  },
-  clientsPage: {
-    padding: '20px',
-  },
-  clientsList: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-    gap: '20px',
-  },
-  clientCard: {
-    backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    borderLeft: '4px solid #8B6F47',
-  },
-  estimatesPage: {
-    padding: '20px',
-  },
-  emptyMessage: {
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  modal: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: '30px',
-    borderRadius: '8px',
-    maxWidth: '600px',
-    maxHeight: '80vh',
-    overflow: 'auto',
-    position: 'relative',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    border: 'none',
-    backgroundColor: 'transparent',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#666',
-  },
-};
+  const Settings = () => (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      <div className="bg-white rounded-lg shadow-sm border p-6 border-l-4 border-l-orange-600">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Blackston Handyman Services</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+            <input type="text" value={userSettings.company_name} className="w-full border rounded-lg px-3 py-2 bg-gray-50" readOnly />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input type="text" value={userSettings.business_phone} className="w-full border rounded-lg px-3 py-2 bg-gray-50" readOnly />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
+            <input type="text" value={userSettings.owner_name} className="w-full border rounded-lg px-3 py-2 bg-gray-50" readOnly />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const Guide = () => (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">User Guide</h1>
+      <div className="bg-white rounded-lg shadow-sm border p-6 border-l-4 border-l-orange-600">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Blackston EstimatePro</h2>
+        <div className="space-y-4">
+          <h3 className="font-semibold">Quick Start:</h3>
+          <ol className="list-decimal list-inside space-y-2 text-gray-700">
+            <li>Click "New Estimate" to create professional estimates</li>
+            <li>Add your clients in the Clients section</li>
+            <li>Use AI Generate for professional scope descriptions</li>
+            <li>Generate PDFs with your Blackston branding</li>
+            <li>Send estimates directly to clients via email</li>
+          </ol>
+          <div className="mt-6 bg-orange-50 p-4 rounded border-l-4 border-orange-600">
+            <h4 className="font-semibold text-orange-800">System Features:</h4>
+            <ul className="text-sm text-orange-700 mt-2">
+              <li>• Professional PDF generation with your template</li>
+              <li>• Email integration for client communication</li>
+              <li>• AI-powered scope generation</li>
+              <li>• Complete client and job management</li>
+              <li>• Automated calculations with tax</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'dashboard': return <Dashboard />;
+      case 'estimates': return <Estimates />;
+      case 'jobs': return <Jobs />;
+      case 'clients': return <Clients />;
+      case 'settings': return <Settings />;
+      case 'guide': return <Guide />;
+      default: return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {renderCurrentPage()}
+      </main>
+    </div>
+  );
+}
 
 export default App;
